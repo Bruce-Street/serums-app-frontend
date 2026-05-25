@@ -1,10 +1,11 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import Map, { NavigationControl } from 'react-map-gl/maplibre';
 import type { MapRef } from 'react-map-gl/maplibre';
 import { usePlazasMap } from '../hooks/queries';
 import { useAppStore } from '../store/useAppStore';
 import { MarkerLayer } from './MarkerLayer';
 import type { MapMouseEvent } from 'maplibre-gl';
+import type { PlazaMapItem } from '@/types';
 
 const INITIAL_VIEW_STATE = {
   longitude: -75.0,
@@ -16,23 +17,43 @@ const INITIAL_VIEW_STATE = {
 
 export function MapView() {
   const mapRef = useRef<MapRef>(null);
+  const debounceRef = useRef<number | undefined>(undefined);
 
   const bbox = useAppStore((state) => state.bbox);
   const setBBox = useAppStore((state) => state.setBBox);
   const filters = useAppStore((state) => state.filters);
-  const setSelectedPlazaId = useAppStore((state) => state.setSelectedPlazaId);
+  const setSelectedEstablishment = useAppStore((state) => state.setSelectedEstablishment);
+  const flyToLocation = useAppStore((state) => state.flyToLocation);
+  const setFlyToLocation = useAppStore((state) => state.setFlyToLocation);
 
   const { data: plazas = [], isFetching } = usePlazasMap(bbox, filters);
 
+  useEffect(() => {
+    if (flyToLocation && mapRef.current) {
+      mapRef.current.getMap().flyTo({
+        center: [flyToLocation.lng, flyToLocation.lat],
+        zoom: 14,
+        essential: true,
+      });
+      setFlyToLocation(undefined);
+    }
+  }, [flyToLocation, setFlyToLocation]);
+
   const onMoveEnd = useCallback(() => {
     if (!mapRef.current) return;
-    const bounds = mapRef.current.getMap().getBounds();
-    setBBox({
-      west: bounds.getWest(),
-      south: bounds.getSouth(),
-      east: bounds.getEast(),
-      north: bounds.getNorth(),
-    });
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(() => {
+      if (!mapRef.current) return;
+      const bounds = mapRef.current.getMap().getBounds();
+      setBBox({
+        west: bounds.getWest(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        north: bounds.getNorth(),
+      });
+    }, 300);
   }, [setBBox]);
 
   const onClick = useCallback(
@@ -44,7 +65,7 @@ export function MapView() {
       });
 
       if (!features.length) {
-        setSelectedPlazaId(undefined);
+        setSelectedEstablishment(undefined);
         return;
       }
 
@@ -63,17 +84,33 @@ export function MapView() {
               duration: 500,
             });
           } catch (err) {
+            console.error(err);
             // Ignore zoom error
           }
         }
       } else if (feature.layer.id === 'unclustered-point') {
-        const plazaId = feature.properties?.id;
-        if (plazaId) {
-          setSelectedPlazaId(plazaId);
+        const props = feature.properties;
+        if (props) {
+          try {
+            const establishment: PlazaMapItem = {
+              codigo_renipress_id: props.codigo_renipress_id,
+              nombre_establecimiento: props.nombre_establecimiento,
+              latitud: Number(props.latitud),
+              longitud: Number(props.longitud),
+              grado_dificultad: props.grado_dificultad,
+              zaf: props.zaf === true || props.zaf === 'true',
+              ze: props.ze === true || props.ze === 'true',
+              plazas:
+                typeof props.plazas === 'string' ? JSON.parse(props.plazas) : props.plazas || [],
+            };
+            setSelectedEstablishment(establishment);
+          } catch (e) {
+            console.error('Error parsing establishment properties:', e);
+          }
         }
       }
     },
-    [setSelectedPlazaId],
+    [setSelectedEstablishment],
   );
 
   return (

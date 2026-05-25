@@ -8,17 +8,23 @@ interface MarkerLayerProps {
 }
 
 export function MarkerLayer({ data }: MarkerLayerProps) {
-  const geojsonData = useMemo<FeatureCollection<Point, PlazaMapItem>>(() => {
+  const geojsonData = useMemo<FeatureCollection<Point, any>>(() => {
     return {
       type: 'FeatureCollection',
-      features: data.map((item) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [item.lng, item.lat],
-        },
-        properties: item,
-      })),
+      features: data.map((item) => {
+        const hasRemunerado = item.plazas?.some((p) => p.tipo_plaza === 'remunerado');
+        return {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [item.longitud, item.latitud],
+          },
+          properties: {
+            ...item,
+            has_remunerado: hasRemunerado,
+          },
+        };
+      }),
     };
   }, [data]);
 
@@ -41,7 +47,7 @@ export function MarkerLayer({ data }: MarkerLayerProps) {
           'circle-color': [
             'step',
             ['get', 'point_count'],
-            '#aa3bff', // Primary color (purple-ish as defined in index.css)
+            '#aa3bff',
             100,
             '#8b2fcc',
             500,
@@ -77,9 +83,8 @@ export function MarkerLayer({ data }: MarkerLayerProps) {
         filter={['!', ['has', 'point_count']]}
         paint={{
           'circle-color': [
-            'match',
-            ['get', 'tipo_plaza'],
-            'remunerado',
+            'case',
+            ['==', ['get', 'has_remunerado'], true],
             '#10b981', // green-500
             '#9ca3af', // gray-400
           ],

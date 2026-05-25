@@ -19,7 +19,7 @@ function generateMockData(): Plaza[] {
       id: `plaza-${i}`,
       nombre: `Establecimiento de Salud ${i}`,
       codigo_renipress: `REN-${Math.floor(10000 + Math.random() * 90000)}`,
-      categoria: Math.random() > 0.5 ? 'I-1' : 'I-2',
+      categoria_establecimiento: Math.random() > 0.5 ? 'I-1' : 'I-2',
       departamento: 'LIMA',
       provincia: 'LIMA',
       distrito: 'LIMA',

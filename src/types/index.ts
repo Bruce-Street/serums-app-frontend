@@ -5,22 +5,38 @@ export interface BoundingBox {
   north: number;
 }
 
-export interface PlazaMapItem {
+export interface PlazaBasic {
   id: string;
-  nombre: string;
-  tipo_plaza: 'remunerado' | 'equivalente'; // remunerado=green, equivalente=gray
+  tipo_plaza: 'remunerado' | 'equivalente';
+  profesion: string;
+  institucion_ofertante: string;
+}
+
+export interface PlazaMapItem {
+  codigo_renipress_id: string;
+  nombre_establecimiento: string;
+  latitud: number;
+  longitud: number;
   grado_dificultad: string;
   zaf: boolean;
   ze: boolean;
+  plazas: PlazaBasic[];
+}
+
+export interface GlobalSearchResult {
+  type: 'place' | 'plaza';
+  id?: string;
+  name: string;
+  location?: string;
   lat: number;
-  lng: number;
+  lon: number;
 }
 
 export interface Plaza {
   id: string;
   nombre: string;
+  categoria_establecimiento: string;
   codigo_renipress: string;
-  categoria: string;
   departamento: string;
   provincia: string;
   distrito: string;

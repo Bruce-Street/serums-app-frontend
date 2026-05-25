@@ -1,64 +1,61 @@
-import type { BoundingBox, FilterOptions, Filters, Plaza, PlazaMapItem } from '../types';
-import { MOCK_PLAZAS } from './mockData';
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import type {
+  BoundingBox,
+  FilterOptions,
+  Filters,
+  Plaza,
+  PlazaMapItem,
+  GlobalSearchResult,
+} from '@/types';
 
 export async function getPlazasMap(
   bbox?: BoundingBox,
   filters?: Partial<Filters>,
+  signal?: AbortSignal,
 ): Promise<PlazaMapItem[]> {
-  await delay(300); // Simulate network latency
-
-  let result = MOCK_PLAZAS;
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/';
+  const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const url = new URL('plazas/map/', base);
 
   if (bbox) {
-    result = result.filter(
-      (p) => p.lat >= bbox.south && p.lat <= bbox.north && p.lng >= bbox.west && p.lng <= bbox.east,
-    );
+    url.searchParams.append('bbox', `${bbox.west},${bbox.south},${bbox.east},${bbox.north}`);
   }
 
-  if (filters?.search) {
-    const search = filters.search.toLowerCase();
-    result = result.filter(
-      (p) =>
-        p.nombre.toLowerCase().includes(search) ||
-        p.distrito.toLowerCase().includes(search) ||
-        p.provincia.toLowerCase().includes(search) ||
-        p.codigo_renipress.toLowerCase().includes(search),
-    );
+  if (filters?.search) url.searchParams.append('search', filters.search);
+  if (filters?.departamento) url.searchParams.append('departamento', filters.departamento);
+  if (filters?.tipo_plaza) url.searchParams.append('tipo_plaza', filters.tipo_plaza);
+
+  const response = await fetch(url.toString(), { signal });
+  if (!response.ok) {
+    throw new Error('Failed to fetch plazas map data');
   }
 
-  if (filters?.departamento) result = result.filter((p) => p.departamento === filters.departamento);
-  if (filters?.tipo_plaza) result = result.filter((p) => p.tipo_plaza === filters.tipo_plaza);
-
-  return result.map((p) => ({
-    id: p.id,
-    nombre: p.nombre,
-    tipo_plaza: p.tipo_plaza,
-    grado_dificultad: p.grado_dificultad,
-    zaf: p.zaf,
-    ze: p.ze,
-    lat: p.lat,
-    lng: p.lng,
-  }));
+  return response.json();
 }
 
-export async function getPlaza(id: string): Promise<Plaza> {
-  await delay(200);
-  const plaza = MOCK_PLAZAS.find((p) => p.id === id);
-  if (!plaza) throw new Error('Plaza not found');
-  return plaza;
+export async function getPlaza(id: string, signal?: AbortSignal): Promise<Plaza> {
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/';
+  const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const response = await fetch(`${base}plazas/${id}/`, { signal });
+  if (!response.ok) throw new Error('Plaza not found');
+  return response.json();
 }
 
-export async function getFilters(): Promise<FilterOptions> {
-  await delay(200);
-  return {
-    departamentos: ['LIMA', 'CUSCO', 'AREQUIPA'],
-    provincias: ['LIMA', 'CUSCO', 'AREQUIPA'],
-    distritos: ['LIMA', 'CUSCO', 'AREQUIPA'],
-    profesiones: ['MEDICINA', 'ENFERMERIA', 'ODONTOLOGIA'],
-    tipos_plaza: ['remunerado', 'equivalente'],
-    categorias_establecimiento: ['I-1', 'I-2', 'I-3', 'I-4', 'II-1', 'II-2'],
-    grados_dificultad: ['1', '2', '3', '4', '5'],
-  };
+export async function getFilters(signal?: AbortSignal): Promise<FilterOptions> {
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/';
+  const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const response = await fetch(`${base}filters/`, { signal });
+  if (!response.ok) throw new Error('Failed to fetch filters');
+  return response.json();
+}
+
+export async function searchGlobal(
+  query: string,
+  signal?: AbortSignal,
+): Promise<GlobalSearchResult[]> {
+  if (!query || query.length < 2) return [];
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/';
+  const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const response = await fetch(`${base}search/?q=${encodeURIComponent(query)}`, { signal });
+  if (!response.ok) throw new Error('Search failed');
+  return response.json();
 }
