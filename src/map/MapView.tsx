@@ -56,6 +56,17 @@ export function MapView() {
     }, 300);
   }, [setBBox]);
 
+  const onLoad = useCallback(() => {
+    if (!mapRef.current) return;
+    const bounds = mapRef.current.getMap().getBounds();
+    setBBox({
+      west: bounds.getWest(),
+      south: bounds.getSouth(),
+      east: bounds.getEast(),
+      north: bounds.getNorth(),
+    });
+  }, [setBBox]);
+
   const onClick = useCallback(
     async (event: MapMouseEvent) => {
       if (!mapRef.current) return;
@@ -118,7 +129,8 @@ export function MapView() {
       <Map
         ref={mapRef}
         initialViewState={INITIAL_VIEW_STATE}
-        mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+        mapStyle="https://tiles.openfreemap.org/styles/liberty"
+        onLoad={onLoad}
         onMoveEnd={onMoveEnd}
         onClick={onClick}
         interactiveLayerIds={['unclustered-point', 'clusters']}

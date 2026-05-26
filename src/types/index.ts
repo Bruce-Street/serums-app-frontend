@@ -63,17 +63,23 @@ export interface Filters {
   tipo_plaza: string;
   categoria_establecimiento: string;
   grado_dificultad: string;
+  institucion_ofertante: string;
+  proceso_ano: string;
+  proceso_periodo: string;
   zaf: string;
   ze: string;
   search: string;
 }
 
 export interface FilterOptions {
+  anos: number[];
+  periodos: string[];
   departamentos: string[];
-  provincias: string[];
-  distritos: string[];
+  provincias?: string[];
+  distritos?: string[];
   profesiones: string[];
-  tipos_plaza: string[];
+  tipos_plaza?: string[];
   categorias_establecimiento: string[];
   grados_dificultad: string[];
+  instituciones_ofertantes: string[];
 }
