@@ -53,6 +53,9 @@ export interface Plaza {
   presupuesto: string;
   lat: number;
   lng: number;
+  imagen_1?: string;
+  imagen_2?: string;
+  imagen_3?: string;
 }
 
 export interface Filters {

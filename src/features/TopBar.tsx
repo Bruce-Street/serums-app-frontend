@@ -41,7 +41,7 @@ export function TopBar() {
     setSearchTerm('');
 
     if (result.type === 'plaza') {
-      // Mock an establishment to open the info panel. 
+      // Mock an establishment to open the info panel.
       // We don't have the full 'plazas' array here, so we provide an empty one.
       // The PlazaInfoPanel will handle fetching detailed data.
       const mockEstablishment: PlazaMapItem = {
@@ -110,29 +110,27 @@ export function TopBar() {
                         <Building2 className="w-4 h-4" />
                       </div>
                     )}
-                    
+
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm text-gray-900 truncate ${result.type === 'plaza' ? 'font-bold' : 'font-medium'}`}>
+                      <p
+                        className={`text-sm text-gray-900 truncate ${result.type === 'plaza' ? 'font-bold' : 'font-medium'}`}
+                      >
                         {result.name}
                       </p>
-                      
+
                       {result.type === 'plaza' && result.id && (
                         <p className="text-xs font-semibold text-[#aa3bff] mt-0.5">
                           RENIPRESS: {result.id}
                         </p>
                       )}
-                      
-                      <p className="text-xs text-gray-500 truncate mt-0.5">
-                        {result.location}
-                      </p>
+
+                      <p className="text-xs text-gray-500 truncate mt-0.5">{result.location}</p>
                     </div>
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                No results found
-              </div>
+              <div className="px-4 py-3 text-sm text-gray-500 text-center">No results found</div>
             )}
           </div>
         )}
