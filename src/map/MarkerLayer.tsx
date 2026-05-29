@@ -12,7 +12,7 @@ export function MarkerLayer({ data }: MarkerLayerProps) {
     return {
       type: 'FeatureCollection',
       features: data.map((item) => {
-        const hasRemunerado = item.plazas?.some((p) => p.tipo_plaza === 'remunerado');
+        const hasremunerada = item.plazas?.some((p) => p.tipo_plaza === 'remunerada');
         return {
           type: 'Feature',
           geometry: {
@@ -21,7 +21,7 @@ export function MarkerLayer({ data }: MarkerLayerProps) {
           },
           properties: {
             ...item,
-            has_remunerado: hasRemunerado,
+            has_remunerada: hasremunerada,
           },
         };
       }),
@@ -84,7 +84,7 @@ export function MarkerLayer({ data }: MarkerLayerProps) {
         paint={{
           'circle-color': [
             'case',
-            ['==', ['get', 'has_remunerado'], true],
+            ['==', ['get', 'has_remunerada'], true],
             '#10b981', // green-500
             '#9ca3af', // gray-400
           ],

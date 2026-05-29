@@ -1,12 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { getFilters, getPlaza, getPlazasMap, searchGlobal } from '../api/serums';
-import type { BoundingBox, Filters } from '@/types';
+import type { Filters } from '@/types';
 
-export const usePlazasMap = (bbox?: BoundingBox, filters?: Partial<Filters>) => {
+export const usePlazasMap = (filters?: Partial<Filters>) => {
   return useQuery({
-    queryKey: ['plazasMap', bbox, filters],
-    queryFn: ({ signal }) => getPlazasMap(bbox, filters, signal),
+    queryKey: ['plazasMap', filters],
+    queryFn: ({ signal }) => getPlazasMap(filters, signal),
     staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 };
 

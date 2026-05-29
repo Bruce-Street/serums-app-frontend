@@ -17,16 +17,17 @@ const INITIAL_VIEW_STATE = {
 
 export function MapView() {
   const mapRef = useRef<MapRef>(null);
-  const debounceRef = useRef<number | undefined>(undefined);
 
-  const bbox = useAppStore((state) => state.bbox);
-  const setBBox = useAppStore((state) => state.setBBox);
   const filters = useAppStore((state) => state.filters);
   const setSelectedEstablishment = useAppStore((state) => state.setSelectedEstablishment);
   const flyToLocation = useAppStore((state) => state.flyToLocation);
   const setFlyToLocation = useAppStore((state) => state.setFlyToLocation);
 
-  const { data: plazas = [], isFetching } = usePlazasMap(bbox, filters);
+  console.log('filters: ', filters);
+
+  const { data: plazas = [], isFetching } = usePlazasMap(filters);
+
+  console.log('plazas: ', plazas);
 
   useEffect(() => {
     if (flyToLocation && mapRef.current) {
@@ -38,34 +39,6 @@ export function MapView() {
       setFlyToLocation(undefined);
     }
   }, [flyToLocation, setFlyToLocation]);
-
-  const onMoveEnd = useCallback(() => {
-    if (!mapRef.current) return;
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(() => {
-      if (!mapRef.current) return;
-      const bounds = mapRef.current.getMap().getBounds();
-      setBBox({
-        west: bounds.getWest(),
-        south: bounds.getSouth(),
-        east: bounds.getEast(),
-        north: bounds.getNorth(),
-      });
-    }, 300);
-  }, [setBBox]);
-
-  const onLoad = useCallback(() => {
-    if (!mapRef.current) return;
-    const bounds = mapRef.current.getMap().getBounds();
-    setBBox({
-      west: bounds.getWest(),
-      south: bounds.getSouth(),
-      east: bounds.getEast(),
-      north: bounds.getNorth(),
-    });
-  }, [setBBox]);
 
   const onClick = useCallback(
     async (event: MapMouseEvent) => {
@@ -130,8 +103,6 @@ export function MapView() {
         ref={mapRef}
         initialViewState={INITIAL_VIEW_STATE}
         mapStyle="https://tiles.openfreemap.org/styles/liberty"
-        onLoad={onLoad}
-        onMoveEnd={onMoveEnd}
         onClick={onClick}
         interactiveLayerIds={['unclustered-point', 'clusters']}
         cursor="pointer"
