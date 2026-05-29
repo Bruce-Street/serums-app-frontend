@@ -7,7 +7,7 @@ export interface BoundingBox {
 
 export interface PlazaBasic {
   id: string;
-  tipo_plaza: 'remunerado' | 'equivalente';
+  tipo_plaza: 'remunerada' | 'equivalente';
   profesion: string;
   institucion_ofertante: string;
 }
@@ -44,7 +44,7 @@ export interface Plaza {
   diresa: string;
   institucion: string;
   profesion: string;
-  tipo_plaza: 'remunerado' | 'equivalente';
+  tipo_plaza: 'remunerada' | 'equivalente';
   cantidad_plazas: number;
   sede_adjudicacion: string;
   grado_dificultad: string;

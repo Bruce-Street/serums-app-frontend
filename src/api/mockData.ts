@@ -11,7 +11,7 @@ function generateMockData(): Plaza[] {
   const maxLat = -0.03;
 
   for (let i = 0; i < TOTAL_ITEMS; i++) {
-    const isRemunerado = Math.random() > 0.3;
+    const isremunerada = Math.random() > 0.3;
     const lat = minLat + Math.random() * (maxLat - minLat);
     const lng = minLng + Math.random() * (maxLng - minLng);
 
@@ -27,7 +27,7 @@ function generateMockData(): Plaza[] {
       diresa: 'DIRIS LIMA CENTRO',
       institucion: 'MINSA',
       profesion: 'MEDICINA',
-      tipo_plaza: isRemunerado ? 'remunerado' : 'equivalente',
+      tipo_plaza: isremunerada ? 'remunerada' : 'equivalente',
       cantidad_plazas: Math.floor(1 + Math.random() * 5),
       sede_adjudicacion: 'Sede Central',
       grado_dificultad: Math.random() > 0.5 ? '1' : '2',

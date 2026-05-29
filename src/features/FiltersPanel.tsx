@@ -186,7 +186,7 @@ export function FiltersPanel() {
               >
                 <option value="">All Difficulty Grades</option>
                 {filtersOptions.grados_dificultad?.map((g) => (
-                  <option key={g} value={`GD-${g}`}>
+                  <option key={g} value={g}>
                     GD-{g}
                   </option>
                 ))}
