@@ -1,5 +1,5 @@
 import { Source, Layer } from 'react-map-gl/maplibre';
-import type { PlazaMapItem } from '../types';
+import type { PlazaMapItem } from '@/types';
 import { useMemo } from 'react';
 import type { FeatureCollection, Point } from 'geojson';
 
@@ -75,6 +75,24 @@ export function MarkerLayer({ data }: MarkerLayerProps) {
         }}
       />
 
+      {/* Unclustered Points Halo/Shadow */}
+      <Layer
+        id="unclustered-point-halo"
+        type="circle"
+        source="plazas-source"
+        filter={['!', ['has', 'point_count']]}
+        paint={{
+          'circle-color': [
+            'case',
+            ['==', ['get', 'has_remunerada'], true],
+            '#10b981', // green-500
+            '#f97316', // orange-500 (highly visible)
+          ],
+          'circle-radius': 12,
+          'circle-opacity': 0.25,
+        }}
+      />
+
       {/* Unclustered Points */}
       <Layer
         id="unclustered-point"
@@ -86,10 +104,10 @@ export function MarkerLayer({ data }: MarkerLayerProps) {
             'case',
             ['==', ['get', 'has_remunerada'], true],
             '#10b981', // green-500
-            '#9ca3af', // gray-400
+            '#f97316', // orange-500
           ],
-          'circle-radius': 8,
-          'circle-stroke-width': 2,
+          'circle-radius': 7,
+          'circle-stroke-width': 2.5,
           'circle-stroke-color': '#fff',
         }}
       />
