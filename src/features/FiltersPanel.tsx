@@ -9,10 +9,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import { useEffect } from 'react';
 
 export function FiltersPanel() {
   const { data: filtersOptions, isLoading } = useFilters();
   const { isFiltersOpen, toggleFilters, filters, updateFilter } = useAppStore();
+
+  useEffect(() => {
+    if (!isLoading && filtersOptions) {
+      const defaultAno = filtersOptions.anos?.[0] || '';
+      const defaultPeriodo = filtersOptions.periodos?.[0] || '';
+      if (defaultAno) updateFilter('proceso_ano', String(defaultAno));
+      if (defaultPeriodo) updateFilter('proceso_periodo', defaultPeriodo);
+    }
+  }, [isLoading, filtersOptions, updateFilter]);
 
   if (isLoading || !filtersOptions) return null;
 
