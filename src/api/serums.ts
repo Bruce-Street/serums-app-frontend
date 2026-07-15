@@ -1,4 +1,11 @@
-import type { FilterOptions, Filters, Plaza, PlazaMapItem, GlobalSearchResult } from '@/types';
+import type {
+  FilterOptions,
+  Filters,
+  Plaza,
+  PlazaMapItem,
+  GlobalSearchResult,
+  HistoricalDataResponse,
+} from '@/types';
 
 export const getPlazasMap = async (
   filters?: Partial<Filters>,
@@ -44,5 +51,16 @@ export async function searchGlobal(
   const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
   const response = await fetch(`${base}search/?q=${encodeURIComponent(query)}`, { signal });
   if (!response.ok) throw new Error('Search failed');
+  return response.json();
+}
+
+export async function getPlazaHistorical(
+  id: string,
+  signal?: AbortSignal,
+): Promise<HistoricalDataResponse> {
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/';
+  const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const response = await fetch(`${base}plazas/${id}/historical/`, { signal });
+  if (!response.ok) throw new Error('Historical data not found');
   return response.json();
 }

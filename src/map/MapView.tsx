@@ -1,11 +1,13 @@
 import { useRef, useCallback, useEffect } from 'react';
-import Map, { NavigationControl } from 'react-map-gl/maplibre';
+import Map, { NavigationControl, Popup } from 'react-map-gl/maplibre';
 import type { MapRef } from 'react-map-gl/maplibre';
 import { usePlazasMap } from '../hooks/queries';
 import { useAppStore } from '../store/useAppStore';
 import { MarkerLayer } from './MarkerLayer';
 import type { MapMouseEvent } from 'maplibre-gl';
 import type { PlazaMapItem } from '@/types';
+import { GitCompare } from 'lucide-react';
+import { cn } from '../utils/cn';
 
 const INITIAL_VIEW_STATE = {
   longitude: -75.0,
@@ -19,15 +21,16 @@ export function MapView() {
   const mapRef = useRef<MapRef>(null);
 
   const filters = useAppStore((state) => state.filters);
+  const selectedEstablishment = useAppStore((state) => state.selectedEstablishment);
   const setSelectedEstablishment = useAppStore((state) => state.setSelectedEstablishment);
   const flyToLocation = useAppStore((state) => state.flyToLocation);
   const setFlyToLocation = useAppStore((state) => state.setFlyToLocation);
 
-  console.log('filters: ', filters);
+  const comparedPlazaIds = useAppStore((state) => state.comparedPlazaIds);
+  const addPlazaToCompare = useAppStore((state) => state.addPlazaToCompare);
+  const removePlazaFromCompare = useAppStore((state) => state.removePlazaFromCompare);
 
   const { data: plazas = [], isFetching } = usePlazasMap(filters);
-
-  console.log('plazas: ', plazas);
 
   useEffect(() => {
     if (flyToLocation && mapRef.current) {
@@ -109,6 +112,74 @@ export function MapView() {
       >
         <NavigationControl position="bottom-right" />
         <MarkerLayer data={plazas} />
+
+        {selectedEstablishment && (
+          <Popup
+            longitude={selectedEstablishment.longitud}
+            latitude={selectedEstablishment.latitud}
+            anchor="bottom"
+            onClose={() => setSelectedEstablishment(undefined)}
+            closeOnClick={false}
+            className="z-50 animate-fade-in"
+          >
+            <div className="p-2 space-y-2 min-w-[220px] text-gray-900">
+              <h4 className="font-bold text-sm leading-tight text-gray-955 text-gray-950">
+                {selectedEstablishment.nombre_establecimiento}
+              </h4>
+              <p className="text-[10px] text-gray-500 font-semibold uppercase">
+                RENIPRESS: {selectedEstablishment.codigo_renipress_id}
+              </p>
+
+              <div className="border-t border-gray-100 pt-2 space-y-1.5">
+                <span className="text-[11px] font-bold text-gray-705 text-gray-700 block">
+                  Profesiones Disponibles
+                </span>
+                {selectedEstablishment.plazas && selectedEstablishment.plazas.length > 0 ? (
+                  selectedEstablishment.plazas.map((p) => {
+                    const isCompared = comparedPlazaIds.includes(p.id);
+                    return (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between gap-3 text-xs bg-gray-50 p-1.5 rounded-lg border border-gray-100"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-900">{p.profesion}</span>
+                          <span className="text-[9px] text-gray-400 capitalize">
+                            {p.tipo_plaza}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (isCompared) {
+                              removePlazaFromCompare(p.id);
+                            } else {
+                              if (comparedPlazaIds.length >= 3) {
+                                alert('Puedes comparar hasta un máximo de 3 plazas.');
+                                return;
+                              }
+                              addPlazaToCompare(p.id);
+                            }
+                          }}
+                          className={cn(
+                            'p-1.5 rounded border transition-all cursor-pointer active:scale-95',
+                            isCompared
+                              ? 'bg-[#aa3bff] text-white border-[#aa3bff]'
+                              : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50',
+                          )}
+                          title={isCompared ? 'Quitar de la comparación' : 'Comparar'}
+                        >
+                          <GitCompare className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-[11px] text-gray-500 italic">No hay plazas registradas.</p>
+                )}
+              </div>
+            </div>
+          </Popup>
+        )}
       </Map>
 
       {isFetching && (

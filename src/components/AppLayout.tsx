@@ -2,6 +2,7 @@ import type { PropsWithChildren } from 'react';
 import { TopBar } from '../features/TopBar';
 import { FiltersPanel } from '../features/FiltersPanel';
 import { PlazaInfoPanel } from '../features/PlazaInfoPanel';
+import { FavoritesPanel } from '../features/FavoritesPanel';
 
 export function AppLayout({ children }: PropsWithChildren) {
   return (
@@ -11,6 +12,7 @@ export function AppLayout({ children }: PropsWithChildren) {
         <FiltersPanel />
         <main className="flex-1 relative z-0">{children}</main>
         <PlazaInfoPanel />
+        <FavoritesPanel />
       </div>
     </div>
   );

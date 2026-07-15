@@ -1,5 +1,11 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { getFilters, getPlaza, getPlazasMap, searchGlobal } from '../api/serums';
+import {
+  getFilters,
+  getPlaza,
+  getPlazasMap,
+  searchGlobal,
+  getPlazaHistorical,
+} from '../api/serums';
 import type { Filters } from '@/types';
 
 export const usePlazasMap = (filters?: Partial<Filters>) => {
@@ -33,5 +39,13 @@ export const useGlobalSearch = (query: string) => {
     queryFn: ({ signal }) => searchGlobal(query, signal),
     enabled: query.length >= 2,
     staleTime: 60 * 1000,
+  });
+};
+
+export const usePlazaHistorical = (id?: string) => {
+  return useQuery({
+    queryKey: ['plazaHistorical', id],
+    queryFn: ({ signal }) => getPlazaHistorical(id!, signal),
+    enabled: !!id,
   });
 };

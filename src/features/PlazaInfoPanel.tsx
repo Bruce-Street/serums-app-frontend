@@ -5,12 +5,14 @@ import {
   Stethoscope,
   ShieldAlert,
   History,
-  User,
   ChevronLeft,
   ChevronRight,
+  GitCompare,
+  Heart,
 } from 'lucide-react';
-import { usePlaza, usePlazasMap } from '../hooks/queries';
+import { usePlaza, usePlazasMap, usePlazaHistorical } from '../hooks/queries';
 import { useAppStore } from '../store/useAppStore';
+import { useFavorites } from '../hooks/useFavorites';
 import { cn } from '../utils/cn';
 import { useMemo, useState, useEffect, useRef } from 'react';
 import type { Filters } from '@/types';
@@ -35,7 +37,25 @@ export function PlazaInfoPanel() {
   }, [selectedEstablishment, plazasMap]);
 
   const firstPlazaId = hydratedEstablishment?.plazas?.[0]?.id;
-  const { data: plazaDetails, isLoading, isError } = usePlaza(firstPlazaId);
+  const [activePlazaId, setActivePlazaId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (firstPlazaId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActivePlazaId(firstPlazaId);
+    }
+  }, [firstPlazaId]);
+
+  const { data: plazaDetails, isLoading, isError } = usePlaza(activePlazaId);
+  const { data: historicalData, isLoading: isHistLoading } = usePlazaHistorical(activePlazaId);
+
+  const comparedPlazaIds = useAppStore((state) => state.comparedPlazaIds);
+  const addPlazaToCompare = useAppStore((state) => state.addPlazaToCompare);
+  const removePlazaFromCompare = useAppStore((state) => state.removePlazaFromCompare);
+
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+  const currentAno = filters.proceso_ano || '';
+  const currentPeriodo = filters.proceso_periodo || '';
 
   const isOpen = !!selectedEstablishment;
 
@@ -53,7 +73,7 @@ export function PlazaInfoPanel() {
     if (selectedEstablishment) {
       filtersAtSelectionRef.current = filters;
     }
-  }, [selectedEstablishment]);
+  }, [selectedEstablishment, filters]);
 
   // Close the panel if the selected establishment is filtered out after changing filters
   useEffect(() => {
@@ -77,7 +97,7 @@ export function PlazaInfoPanel() {
     setCurrentImageIndex(0);
     setFullScreenImage(null);
     setFailedImages({});
-  }, [firstPlazaId]);
+  }, [activePlazaId]);
 
   // Extract images
   const images = useMemo(() => {
@@ -303,24 +323,94 @@ export function PlazaInfoPanel() {
                   <p className="text-xs text-gray-500">Cargando profesiones...</p>
                 ) : (
                   <div className="space-y-2">
-                    {hydratedEstablishment.plazas.map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex items-center justify-between bg-white border border-gray-100 p-3 rounded-xl shadow-xs"
-                      >
-                        <span className="font-semibold text-gray-900 text-sm">{p.profesion}</span>
-                        <span
+                    {hydratedEstablishment.plazas.map((p) => {
+                      const isCompared = comparedPlazaIds.includes(p.id);
+                      const isActive = p.id === activePlazaId;
+                      return (
+                        <div
+                          key={p.id}
+                          onClick={() => setActivePlazaId(p.id)}
                           className={cn(
-                            'px-2 py-0.5 text-[9px] font-bold rounded-full uppercase tracking-wider',
-                            p.tipo_plaza === 'remunerada'
-                              ? 'bg-green-50 border border-green-200 text-green-700'
-                              : 'bg-orange-50 border border-orange-200 text-orange-700',
+                            'flex items-center justify-between border p-3 rounded-xl shadow-xs cursor-pointer hover:border-[#aa3bff]/50 transition-all',
+                            isActive
+                              ? 'border-[#aa3bff] bg-purple-50/30'
+                              : 'border-gray-100 bg-white',
                           )}
                         >
-                          {p.tipo_plaza}
-                        </span>
-                      </div>
-                    ))}
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-gray-900 text-sm">
+                              {p.profesion}
+                            </span>
+                            <span
+                              className={cn(
+                                'mt-1 w-max px-2 py-0.5 text-[9px] font-bold rounded-full uppercase tracking-wider',
+                                p.tipo_plaza === 'remunerada'
+                                  ? 'bg-green-50 border border-green-200 text-green-700'
+                                  : 'bg-orange-50 border border-orange-200 text-orange-700',
+                              )}
+                            >
+                              {p.tipo_plaza}
+                            </span>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isCompared) {
+                                removePlazaFromCompare(p.id);
+                              } else {
+                                if (comparedPlazaIds.length >= 3) {
+                                  alert('Puedes comparar hasta un máximo de 3 plazas.');
+                                  return;
+                                }
+                                addPlazaToCompare(p.id);
+                              }
+                            }}
+                            className={cn(
+                              'p-2 rounded-lg border transition-all cursor-pointer active:scale-90',
+                              isCompared
+                                ? 'bg-[#aa3bff] text-white border-[#aa3bff]'
+                                : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50',
+                            )}
+                            title={isCompared ? 'Quitar de la comparación' : 'Comparar plaza'}
+                          >
+                            <GitCompare className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Favorite button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isFavorite(p.id)) {
+                                removeFavorite(p.id);
+                              } else {
+                                addFavorite({
+                                  id: p.id,
+                                  establishmentName: hydratedEstablishment.nombre_establecimiento,
+                                  profesion: p.profesion,
+                                  tipoPlaza: p.tipo_plaza,
+                                  codigoRenipressId: hydratedEstablishment.codigo_renipress_id,
+                                  procesoAno: currentAno,
+                                  procesoPeriodo: currentPeriodo,
+                                });
+                              }
+                            }}
+                            className={cn(
+                              'p-2 rounded-lg border transition-all cursor-pointer active:scale-90',
+                              isFavorite(p.id)
+                                ? 'bg-red-50 text-red-600 border-red-200'
+                                : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50',
+                            )}
+                            title={isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                          >
+                            <Heart
+                              className="w-3.5 h-3.5"
+                              fill={isFavorite(p.id) ? 'currentColor' : 'none'}
+                              strokeWidth={isFavorite(p.id) ? 0 : 2}
+                            />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -360,64 +450,157 @@ export function PlazaInfoPanel() {
                 )}
               </div>
 
-              {/* Conditions */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-gray-900 font-bold text-sm border-b border-gray-100 pb-2">
-                  <ShieldAlert className="w-4 h-4 text-[#aa3bff]" />
-                  Condiciones
+              {/* Conditions & Indicators */}
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-gray-900 font-bold text-sm border-b border-gray-100 pb-2">
+                    <ShieldAlert className="w-4 h-4 text-[#aa3bff]" />
+                    Condiciones
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    {hydratedEstablishment.grado_dificultad && (
+                      <span className="px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 font-bold border border-orange-200 flex items-center gap-1.5 shadow-xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                        GD-{hydratedEstablishment.grado_dificultad}
+                      </span>
+                    )}
+                    {hydratedEstablishment.zaf && (
+                      <span className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 shadow-xs">
+                        ZAF
+                      </span>
+                    )}
+                    {hydratedEstablishment.ze && (
+                      <span className="px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 font-bold border border-sky-200 shadow-xs">
+                        ZE
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  {hydratedEstablishment.grado_dificultad && (
-                    <span className="px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 font-bold border border-orange-200 flex items-center gap-1.5 shadow-xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-55 bg-orange-500"></span>
-                      GD-{hydratedEstablishment.grado_dificultad}
-                    </span>
-                  )}
-                  {hydratedEstablishment.zaf && (
-                    <span className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 shadow-xs">
-                      ZAF
-                    </span>
-                  )}
-                  {hydratedEstablishment.ze && (
-                    <span className="px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 font-bold border border-sky-200 shadow-xs">
-                      ZE
-                    </span>
-                  )}
+
+                <div className="space-y-3">
+                  <div className="text-gray-900 font-bold text-sm border-b border-gray-100 pb-2">
+                    Indicadores de Competitividad
+                  </div>
+                  {isHistLoading ? (
+                    <div className="h-8 bg-gray-105 animate-pulse rounded-lg w-full"></div>
+                  ) : historicalData ? (
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {historicalData.confidence === 'Insufficient' ? (
+                        <span className="px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 font-medium border border-gray-200 shadow-xs">
+                          Limited historical information
+                        </span>
+                      ) : (
+                        <>
+                          {/* Difficulty Badge */}
+                          <span
+                            className={cn(
+                              'px-3 py-1.5 rounded-lg font-bold border shadow-xs',
+                              historicalData.difficulty === 'Very High' &&
+                                'bg-red-50 text-red-700 border-red-200',
+                              historicalData.difficulty === 'High' &&
+                                'bg-orange-50 text-orange-700 border-orange-200',
+                              historicalData.difficulty === 'Medium' &&
+                                'bg-amber-50 text-amber-700 border-amber-200',
+                              historicalData.difficulty === 'Low' &&
+                                'bg-green-50 text-green-700 border-green-200',
+                              historicalData.difficulty === 'Very Low' &&
+                                'bg-blue-50 text-blue-700 border-blue-200',
+                            )}
+                          >
+                            GD Histórica: {historicalData.difficulty}
+                          </span>
+
+                          {/* Demand Confidence */}
+                          <span
+                            className={cn(
+                              'px-3 py-1.5 rounded-lg font-bold border shadow-xs',
+                              historicalData.confidence === 'Very High' &&
+                                'bg-emerald-50 text-emerald-700 border-emerald-200',
+                              historicalData.confidence === 'High' &&
+                                'bg-teal-50 text-teal-700 border-teal-200',
+                              historicalData.confidence === 'Medium' &&
+                                'bg-sky-50 text-sky-700 border-sky-200',
+                              historicalData.confidence === 'Low' &&
+                                'bg-zinc-50 text-zinc-700 border-zinc-200',
+                            )}
+                          >
+                            Confianza: {historicalData.confidence}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
-              {/* Coming Soon Section */}
-              <div className="mt-8 pt-6 border-t border-gray-200 relative">
-                <div className="absolute top-0 right-0 -translate-y-1/2 bg-[#aa3bff] text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md uppercase tracking-wide">
-                  Próximamente
-                </div>
+              {/* Historical Adjudications */}
+              <div className="mt-8 pt-6 border-t border-gray-200">
                 <div className="flex items-center gap-2 text-gray-900 font-bold text-sm mb-4">
-                  <History className="w-4 h-4 text-gray-400" />
+                  <History className="w-4 h-4 text-[#aa3bff]" />
                   Adjudicaciones Históricas
                 </div>
 
-                <div className="opacity-60 pointer-events-none">
-                  <div className="mb-2 text-xs font-bold text-gray-500">Proceso 2025-I</div>
-                  <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-xs">
-                    <div className="flex items-center gap-3 border-b border-gray-100 pb-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-                        <User className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-gray-900 text-sm">Juan Pérez Silva</div>
-                        <div className="text-xs text-gray-500">Medicina Humana</div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="text-gray-500">Puntaje Final</div>
-                      <div className="font-bold text-gray-900">18.15 pts</div>
-                    </div>
-                    <div className="flex justify-between items-center text-xs mt-1">
-                      <div className="text-gray-500">Percentil Requerido</div>
-                      <div className="font-bold text-[#aa3bff]">Top 12%</div>
-                    </div>
+                {isHistLoading ? (
+                  <div className="space-y-3 animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                    <div className="h-16 bg-gray-200 rounded w-full"></div>
                   </div>
-                </div>
+                ) : historicalData &&
+                  historicalData.history &&
+                  historicalData.history.length > 0 ? (
+                  <div className="space-y-4">
+                    {historicalData.history.map((hist) => (
+                      <div key={hist.year} className="space-y-2">
+                        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                          Proceso {hist.year}-{hist.period}
+                        </div>
+                        {hist.admitted && hist.admitted.length > 0 ? (
+                          <div className="space-y-2">
+                            {hist.admitted.map((adm, idx) => (
+                              <div
+                                key={idx}
+                                className="bg-white border border-gray-100 rounded-xl p-4 shadow-xs"
+                              >
+                                <div className="flex items-center gap-3 border-b border-gray-100 pb-2 mb-2">
+                                  <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-[#aa3bff] font-bold text-xs">
+                                    {idx + 1}
+                                  </div>
+                                  <div>
+                                    <div className="font-semibold text-gray-950 text-sm">
+                                      {adm.name}
+                                    </div>
+                                    <div className="text-[10px] text-gray-405 text-gray-400">
+                                      {hist.profession}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-y-1 text-xs">
+                                  <span className="text-gray-500">Puntaje Final:</span>
+                                  <span className="font-bold text-gray-950 text-right">
+                                    {adm.score.toFixed(4)}
+                                  </span>
+                                  <span className="text-gray-500">Ranking:</span>
+                                  <span className="font-bold text-[#aa3bff] text-right">
+                                    Puesto {adm.ranking}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500 italic">
+                            No hubo postulantes adjudicados.
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500 italic bg-gray-50 border border-gray-100 p-4 rounded-xl text-center">
+                    No hay información histórica disponible para este establecimiento, profesión y
+                    proceso equivalente.
+                  </p>
+                )}
               </div>
             </div>
           )}

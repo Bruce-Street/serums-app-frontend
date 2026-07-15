@@ -86,3 +86,42 @@ export interface FilterOptions {
   grados_dificultad: string[];
   instituciones_ofertantes: string[];
 }
+
+export interface HistoricalAdjudication {
+  name: string;
+  score: number;
+  ranking: number;
+}
+
+export interface HistoricalYearData {
+  year: number;
+  period: string;
+  profession: string;
+  admitted: HistoricalAdjudication[];
+}
+
+export interface HistoricalStats {
+  min_score: number | null;
+  max_score: number | null;
+  avg_score: number | null;
+  median_score: number | null;
+  last_admitted_ranking: number | null;
+  total_admitted: number;
+}
+
+export interface HistoricalDataResponse {
+  history: HistoricalYearData[];
+  stats: HistoricalStats;
+  confidence: string;
+  difficulty: string;
+}
+
+export interface FavoriteItem {
+  id: string;
+  establishmentName: string;
+  profesion: string;
+  tipoPlaza: 'remunerada' | 'equivalente';
+  codigoRenipressId: string;
+  procesoAno: string;
+  procesoPeriodo: string;
+}

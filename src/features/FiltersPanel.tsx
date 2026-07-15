@@ -113,17 +113,17 @@ export function FiltersPanel() {
 
           {/* Location */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Location</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ubicación</h3>
             <div className="space-y-2.5">
               <Select
                 value={filters.departamento || 'all'}
                 onValueChange={(val) => updateFilter('departamento', val === 'all' ? '' : val)}
               >
                 <SelectTrigger className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-2 focus:ring-[#aa3bff]/50 focus:border-[#aa3bff] h-10 px-3 cursor-pointer">
-                  <SelectValue placeholder="All Departments" />
+                  <SelectValue placeholder="Todos los departamentos" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200 rounded-xl shadow-lg">
-                  <SelectItem value="all">All Departments</SelectItem>
+                  <SelectItem value="all">Todos los departamentos</SelectItem>
                   {filtersOptions.departamentos.map((d) => (
                     <SelectItem key={d} value={d}>
                       {d}
@@ -136,19 +136,17 @@ export function FiltersPanel() {
 
           {/* Professional */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Professional
-            </h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Profesión</h3>
             <div className="space-y-2.5">
               <Select
                 value={filters.profesion || 'all'}
                 onValueChange={(val) => updateFilter('profesion', val === 'all' ? '' : val)}
               >
                 <SelectTrigger className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-2 focus:ring-[#aa3bff]/50 focus:border-[#aa3bff] h-10 px-3 cursor-pointer">
-                  <SelectValue placeholder="All Professions" />
+                  <SelectValue placeholder="Todas las profesiones" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200 rounded-xl shadow-lg">
-                  <SelectItem value="all">All Professions</SelectItem>
+                  <SelectItem value="all">Todas las profesiones</SelectItem>
                   {filtersOptions.profesiones.map((p) => (
                     <SelectItem key={p} value={p}>
                       {p}
@@ -181,7 +179,7 @@ export function FiltersPanel() {
           {/* Institution */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Institution Info
+              Institución
             </h3>
             <div className="space-y-2.5">
               <Select
@@ -191,10 +189,10 @@ export function FiltersPanel() {
                 }
               >
                 <SelectTrigger className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-2 focus:ring-[#aa3bff]/50 focus:border-[#aa3bff] h-10 px-3 cursor-pointer">
-                  <SelectValue placeholder="All Institutions" />
+                  <SelectValue placeholder="Todas las instituciones" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200 rounded-xl shadow-lg">
-                  <SelectItem value="all">All Institutions</SelectItem>
+                  <SelectItem value="all">Todas las instituciones</SelectItem>
                   {filtersOptions.instituciones_ofertantes?.map((i) => (
                     <SelectItem key={i} value={i}>
                       {i}
@@ -210,10 +208,10 @@ export function FiltersPanel() {
                 }
               >
                 <SelectTrigger className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-2 focus:ring-[#aa3bff]/50 focus:border-[#aa3bff] h-10 px-3 cursor-pointer">
-                  <SelectValue placeholder="All Categories" />
+                  <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200 rounded-xl shadow-lg">
-                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="all">Todas las categorías</SelectItem>
                   {filtersOptions.categorias_establecimiento?.map((c) => (
                     <SelectItem key={c} value={c}>
                       {c}
@@ -226,17 +224,17 @@ export function FiltersPanel() {
 
           {/* Conditions */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Conditions</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Condiciones</h3>
             <div className="space-y-2.5">
               <Select
                 value={filters.grado_dificultad || 'all'}
                 onValueChange={(val) => updateFilter('grado_dificultad', val === 'all' ? '' : val)}
               >
                 <SelectTrigger className="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-2 focus:ring-[#aa3bff]/50 focus:border-[#aa3bff] h-10 px-3 cursor-pointer">
-                  <SelectValue placeholder="All Difficulty Grades" />
+                  <SelectValue placeholder="Todos los GD" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200 rounded-xl shadow-lg">
-                  <SelectItem value="all">All Difficulty Grades</SelectItem>
+                  <SelectItem value="all">Todos los GD</SelectItem>
                   {filtersOptions.grados_dificultad?.map((g) => (
                     <SelectItem key={g} value={String(g)}>
                       GD-{g}

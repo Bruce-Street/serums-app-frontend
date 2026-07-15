@@ -1,8 +1,9 @@
-import { MapPin, Search, Map as MapIcon, Building2 } from 'lucide-react';
+import { MapPin, Search, Map as MapIcon, Building2, Heart } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useState, useEffect, useRef } from 'react';
 import { useGlobalSearch } from '../hooks/queries';
 import type { GlobalSearchResult, PlazaMapItem } from '../types';
+import { useFavorites } from '../hooks/useFavorites';
 
 export function TopBar() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,6 +12,8 @@ export function TopBar() {
 
   const setFlyToLocation = useAppStore((state) => state.setFlyToLocation);
   const setSelectedEstablishment = useAppStore((state) => state.setSelectedEstablishment);
+  const toggleFavorites = useAppStore((state) => state.toggleFavorites);
+  const { count } = useFavorites();
 
   // Debounced value for API
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -134,6 +137,22 @@ export function TopBar() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Favorites Button */}
+      <div className="flex items-center gap-2 ml-4">
+        <button
+          onClick={() => toggleFavorites()}
+          className="relative p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+          aria-label="Favoritos"
+        >
+          <Heart className="w-5 h-5 text-[#aa3bff]" />
+          {count > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+              {count > 99 ? '99+' : count}
+            </span>
+          )}
+        </button>
       </div>
     </header>
   );
