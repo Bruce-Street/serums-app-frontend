@@ -1,4 +1,4 @@
-import { MapPin, Search, Map as MapIcon, Building2, Heart } from 'lucide-react';
+import { MapPin, Search, Map as MapIcon, Building2, Heart, GitCompare } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useState, useEffect, useRef } from 'react';
 import { useGlobalSearch } from '../hooks/queries';
@@ -13,6 +13,8 @@ export function TopBar() {
   const setFlyToLocation = useAppStore((state) => state.setFlyToLocation);
   const setSelectedEstablishment = useAppStore((state) => state.setSelectedEstablishment);
   const toggleFavorites = useAppStore((state) => state.toggleFavorites);
+  const toggleCompareView = useAppStore((state) => state.toggleCompareView);
+  const comparedPlazaIds = useAppStore((state) => state.comparedPlazaIds);
   const { count } = useFavorites();
 
   // Debounced value for API
@@ -139,12 +141,27 @@ export function TopBar() {
         )}
       </div>
 
-      {/* Favorites Button */}
-      <div className="flex items-center gap-2 ml-4">
+      {/* Action Buttons (Favorites & Compare) */}
+      <div className="flex items-center gap-1 sm:gap-2 ml-4">
+        <button
+          onClick={() => toggleCompareView()}
+          className="relative p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+          aria-label="Comparar Plazas"
+          title="Comparar Plazas"
+        >
+          <GitCompare className="w-5 h-5 text-[#aa3bff]" />
+          {comparedPlazaIds.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-[#aa3bff] text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+              {comparedPlazaIds.length}
+            </span>
+          )}
+        </button>
+
         <button
           onClick={() => toggleFavorites()}
           className="relative p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
           aria-label="Favoritos"
+          title="Favoritos"
         >
           <Heart className="w-5 h-5 text-[#aa3bff]" />
           {count > 0 && (

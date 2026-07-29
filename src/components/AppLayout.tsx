@@ -3,6 +3,8 @@ import { TopBar } from '../features/TopBar';
 import { FiltersPanel } from '../features/FiltersPanel';
 import { PlazaInfoPanel } from '../features/PlazaInfoPanel';
 import { FavoritesPanel } from '../features/FavoritesPanel';
+import { ComparePanel } from '../features/ComparePanel';
+import { CompareFloatingBar } from '../features/CompareFloatingBar';
 
 export function AppLayout({ children }: PropsWithChildren) {
   return (
@@ -13,6 +15,8 @@ export function AppLayout({ children }: PropsWithChildren) {
         <main className="flex-1 relative z-0">{children}</main>
         <PlazaInfoPanel />
         <FavoritesPanel />
+        <ComparePanel />
+        <CompareFloatingBar />
       </div>
     </div>
   );
