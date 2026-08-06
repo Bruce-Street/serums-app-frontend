@@ -136,7 +136,7 @@ function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: ()
             <div className="h-6 bg-gray-100 animate-pulse rounded" />
           ) : historical ? (
             <div className="space-y-2">
-              {historical.confidence === 'Insufficient' ? (
+              {historical.confidence === 'Insuficiente' ? (
                 <div className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 font-medium text-[11px] text-center">
                   Información histórica limitada
                 </div>
@@ -147,11 +147,11 @@ function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: ()
                     <span
                       className={cn(
                         'font-bold text-xs block mt-0.5',
-                        historical.difficulty === 'Very High' && 'text-red-600',
-                        historical.difficulty === 'High' && 'text-orange-600',
-                        historical.difficulty === 'Medium' && 'text-amber-600',
-                        historical.difficulty === 'Low' && 'text-green-600',
-                        historical.difficulty === 'Very Low' && 'text-blue-600',
+                        historical.difficulty === 'Muy Alta' && 'text-red-600',
+                        historical.difficulty === 'Alta' && 'text-orange-600',
+                        historical.difficulty === 'Media' && 'text-amber-600',
+                        historical.difficulty === 'Baja' && 'text-green-600',
+                        historical.difficulty === 'Muy Baja' && 'text-blue-600',
                       )}
                     >
                       {historical.difficulty}
@@ -163,10 +163,10 @@ function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: ()
                     <span
                       className={cn(
                         'font-bold text-xs block mt-0.5',
-                        historical.confidence === 'Very High' && 'text-emerald-600',
-                        historical.confidence === 'High' && 'text-teal-600',
-                        historical.confidence === 'Medium' && 'text-sky-600',
-                        historical.confidence === 'Low' && 'text-zinc-600',
+                        historical.confidence === 'Muy Alta' && 'text-emerald-600',
+                        historical.confidence === 'Alta' && 'text-teal-600',
+                        historical.confidence === 'Media' && 'text-sky-600',
+                        historical.confidence === 'Baja' && 'text-zinc-600',
                       )}
                     >
                       {historical.confidence}

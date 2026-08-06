@@ -485,7 +485,7 @@ export function PlazaInfoPanel() {
                     <div className="h-8 bg-gray-105 animate-pulse rounded-lg w-full"></div>
                   ) : historicalData ? (
                     <div className="flex flex-wrap gap-2 text-xs">
-                      {historicalData.confidence === 'Insufficient' ? (
+                      {historicalData.confidence === 'Insuficiente' ? (
                         <span className="px-3 py-1.5 rounded-lg bg-gray-50 text-gray-500 font-medium border border-gray-200 shadow-xs">
                           Limited historical information
                         </span>
@@ -495,15 +495,15 @@ export function PlazaInfoPanel() {
                           <span
                             className={cn(
                               'px-3 py-1.5 rounded-lg font-bold border shadow-xs',
-                              historicalData.difficulty === 'Very High' &&
+                              historicalData.difficulty === 'Muy Alta' &&
                                 'bg-red-50 text-red-700 border-red-200',
-                              historicalData.difficulty === 'High' &&
+                              historicalData.difficulty === 'Alta' &&
                                 'bg-orange-50 text-orange-700 border-orange-200',
-                              historicalData.difficulty === 'Medium' &&
+                              historicalData.difficulty === 'Media' &&
                                 'bg-amber-50 text-amber-700 border-amber-200',
-                              historicalData.difficulty === 'Low' &&
+                              historicalData.difficulty === 'Baja' &&
                                 'bg-green-50 text-green-700 border-green-200',
-                              historicalData.difficulty === 'Very Low' &&
+                              historicalData.difficulty === 'Muy Baja' &&
                                 'bg-blue-50 text-blue-700 border-blue-200',
                             )}
                           >
