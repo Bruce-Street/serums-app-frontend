@@ -32,17 +32,6 @@ export function MapView() {
 
   const { data: plazas = [], isFetching } = usePlazasMap(filters);
 
-  useEffect(() => {
-    if (flyToLocation && mapRef.current) {
-      mapRef.current.getMap().flyTo({
-        center: [flyToLocation.lng, flyToLocation.lat],
-        zoom: 14,
-        essential: true,
-      });
-      setFlyToLocation(undefined);
-    }
-  }, [flyToLocation, setFlyToLocation]);
-
   const onClick = useCallback(
     async (event: MapMouseEvent) => {
       if (!mapRef.current) return;
@@ -99,6 +88,29 @@ export function MapView() {
     },
     [setSelectedEstablishment],
   );
+
+  useEffect(() => {
+    if (flyToLocation && mapRef.current) {
+      mapRef.current.getMap().flyTo({
+        center: [flyToLocation.lng, flyToLocation.lat],
+        zoom: 14,
+        essential: true,
+      });
+      setFlyToLocation(undefined);
+    }
+  }, [flyToLocation, setFlyToLocation]);
+
+  useEffect(() => {
+    if (!selectedEstablishment || isFetching) return;
+
+    const stillExists = plazas.some(
+      (plaza) => plaza.codigo_renipress_id === selectedEstablishment.codigo_renipress_id,
+    );
+
+    if (!stillExists) {
+      setSelectedEstablishment(undefined);
+    }
+  }, [plazas, isFetching, selectedEstablishment, setSelectedEstablishment]);
 
   return (
     <div className="w-full h-full relative">
