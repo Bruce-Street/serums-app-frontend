@@ -80,7 +80,7 @@ export function TopBar() {
           <input
             type="text"
             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-[#aa3bff]/50 focus:border-[#aa3bff] sm:text-sm transition-colors"
-            placeholder="Search establishments, districts, codes..."
+            placeholder="Buscar establecimeinto, RENIPRESS, distrito..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);

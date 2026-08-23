@@ -9,8 +9,30 @@ import {
   ChevronRight,
   GitCompare,
   Heart,
+  Compass,
+  CloudSun,
+  Wifi,
+  ChevronDown,
+  ChevronUp,
+  Thermometer,
+  Clock,
+  Car,
+  HelpCircle,
+  Info,
+  TrendingUp,
 } from 'lucide-react';
-import { usePlaza, usePlazasMap, usePlazaHistorical } from '../hooks/queries';
+
+
+import {
+  usePlaza,
+  usePlazasMap,
+  usePlazaHistorical,
+  useAccessibility,
+  useClimate,
+  useConnectivity,
+  useRecommendation,
+} from '../hooks/queries';
+import { useDecisionProfile } from '../hooks/useDecisionProfile';
 import { useAppStore } from '../store/useAppStore';
 import { useFavorites } from '../hooks/useFavorites';
 import { cn } from '../utils/cn';
@@ -23,6 +45,8 @@ export function PlazaInfoPanel() {
 
   const filters = useAppStore((state) => state.filters);
   const { data: plazasMap, isSuccess } = usePlazasMap(filters);
+
+  const { profile, isConfigured } = useDecisionProfile();
 
   // Hydrate establishment if it came from search without plazas
   const hydratedEstablishment = useMemo(() => {
@@ -48,6 +72,42 @@ export function PlazaInfoPanel() {
 
   const { data: plazaDetails, isLoading, isError } = usePlaza(activePlazaId);
   const { data: historicalData, isLoading: isHistLoading } = usePlazaHistorical(activePlazaId);
+
+  // Decision Profile queries
+  const decisionParams = useMemo(() => {
+    if (!profile) return undefined;
+    const params: Record<string, string> = {};
+    if (profile.profession) params.user_profession = profile.profession;
+    if (profile.finalScore !== null && profile.finalScore !== undefined)
+      params.user_score = String(profile.finalScore);
+    if (profile.origin) {
+      if (
+        profile.origin.type === 'coordinates' &&
+        profile.origin.latitude &&
+        profile.origin.longitude
+      ) {
+        params.origin_lat = String(profile.origin.latitude);
+        params.origin_lon = String(profile.origin.longitude);
+      } else if (profile.origin.type === 'manual') {
+        if (profile.origin.district) params.origin_district = profile.origin.district;
+        if (profile.origin.province) params.origin_province = profile.origin.province;
+        if (profile.origin.department) params.origin_department = profile.origin.department;
+      }
+    }
+    return params;
+  }, [profile]);
+
+  const { data: recommendationData } = useRecommendation(activePlazaId, decisionParams);
+  const { data: accessibilityData } = useAccessibility(activePlazaId, decisionParams);
+  const { data: climateData } = useClimate(activePlazaId);
+  const { data: connectivityData } = useConnectivity(activePlazaId);
+
+  const [openSection, setOpenSection] = useState<'accessibility' | 'climate' | 'connectivity' | null>(
+    'accessibility',
+  );
+  const [showOpportunityHelp, setShowOpportunityHelp] = useState(false);
+
+
 
   const comparedPlazaIds = useAppStore((state) => state.comparedPlazaIds);
   const addPlazaToCompare = useAppStore((state) => state.addPlazaToCompare);
@@ -274,6 +334,135 @@ export function PlazaInfoPanel() {
                 </div>
               )}
 
+              {/* Primary User Opportunity & Recommendation Card */}
+              <div className="bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-950 p-4 rounded-2xl text-white shadow-lg relative overflow-hidden space-y-3">
+                <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-28 h-28 bg-purple-500/10 rounded-full blur-xl pointer-events-none" />
+
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-purple-200">
+                    <TrendingUp className="w-4 h-4 text-amber-400" />
+                    <span>Tu Oportunidad</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowOpportunityHelp((prev) => !prev)}
+                      className="text-purple-300 hover:text-white p-0.5 rounded transition-colors cursor-pointer"
+                      title="Acerca de este indicador"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  {recommendationData?.badge && (
+                    <span className="px-2.5 py-0.5 text-[10px] font-black tracking-wider uppercase rounded-full bg-amber-400 text-purple-950 shadow-xs">
+                      {recommendationData.badge}
+                    </span>
+                  )}
+                </div>
+
+                {isConfigured && recommendationData ? (
+                  <>
+                    <div className="flex items-baseline justify-between">
+                      <div>
+                        <div className="text-3xl font-black tracking-tight text-white flex items-baseline gap-1">
+                          {recommendationData.breakdown?.user_opportunity_detail?.score ??
+                            recommendationData.breakdown?.user_opportunity ??
+                            recommendationData.recommendation_score}
+                          <span className="text-xs text-purple-300 font-normal">/ 100</span>
+                        </div>
+                        <p className="text-xs font-semibold text-purple-200 mt-0.5">
+                          {recommendationData.breakdown?.user_opportunity_detail?.level_display ??
+                            recommendationData.recommendation_level}
+                        </p>
+                      </div>
+
+                      <div className="text-right text-[10px] text-purple-200/90 space-y-1 bg-white/10 px-2.5 py-1.5 rounded-xl backdrop-blur-xs border border-white/10">
+                        <div>
+                          <span className="text-purple-300">Evidencia: </span>
+                          <span className="font-semibold text-white">
+                            {recommendationData.breakdown?.user_opportunity_detail
+                              ?.historical_sample_size
+                              ? `${recommendationData.breakdown.user_opportunity_detail.historical_sample_size} adjudicaciones`
+                              : 'No disponible'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-purple-300">Períodos: </span>
+                          <span className="font-semibold text-white">
+                            {recommendationData.breakdown?.user_opportunity_detail
+                              ?.historical_period_count ?? 0}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-purple-300">Confianza: </span>
+                          <span className="font-semibold text-amber-300">
+                            {recommendationData.breakdown?.user_opportunity_detail
+                              ?.confidence_display ?? 'Moderada'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Source / Subtext tag */}
+                    <div className="flex items-center justify-between text-[10px] text-purple-300/80 pt-1 border-t border-white/10 font-mono">
+                      <span>
+                        Basado en:{' '}
+                        {recommendationData.breakdown?.user_opportunity_detail?.source ===
+                        'difficulty_fallback'
+                          ? 'Grado de Dificultad (Sin historial)'
+                          : 'Datos Históricos SERUMS'}
+                      </span>
+                      <span>
+                        Score global: {recommendationData.recommendation_score}/100
+                      </span>
+                    </div>
+
+                    {/* Explanation Banner */}
+                    {recommendationData.breakdown?.user_opportunity_detail?.explanation && (
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-2 text-[10px] text-purple-200 flex items-start gap-1.5 leading-relaxed">
+                        <Info className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                        <span>
+                          {recommendationData.breakdown.user_opportunity_detail.explanation}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="py-2 text-center space-y-1">
+                    <p className="text-xs text-purple-200 font-medium">
+                      Complete su Perfil de Decisión para ver su oportunidad personalizada.
+                    </p>
+                  </div>
+                )}
+
+                {/* Educational Help Box */}
+                {showOpportunityHelp && (
+                  <div className="bg-purple-950/95 border border-purple-400/30 rounded-xl p-3 text-[11px] text-purple-100 space-y-2 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between font-bold text-amber-300">
+                      <span>¿Cómo se calcula Tu Oportunidad?</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowOpportunityHelp(false)}
+                        className="text-purple-300 hover:text-white cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <p className="leading-relaxed">
+                      <strong>Tu Oportunidad</strong> compara tu puntaje con los puntajes históricos
+                      de postulantes que adjudicaron esta profesión en este establecimiento. Es un
+                      indicador de favorabilidad relativa, <em>no una probabilidad estadística de adjudicación</em>.
+                    </p>
+                    <p className="leading-relaxed text-[10px] text-purple-300">
+                      • La ausencia de registros históricos en algunos períodos no se asume como demanda cero (la plaza o profesión pudo no haber sido ofertada o los datos no están disponibles).
+                    </p>
+                    <p className="leading-relaxed text-[10px] text-purple-300">
+                      • Si no existen registros previos para esta plaza y profesión, se utiliza una estimación conservadora basada en el grado de dificultad de la plaza.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+
               {/* Header Info */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -312,6 +501,278 @@ export function PlazaInfoPanel() {
                   </div>
                 </div>
               </div>
+
+              {/* Decision Support Cards Section (Accessibility, Climate, Connectivity) */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-gray-900 font-bold text-sm border-b border-gray-100 pb-2">
+                  <Compass className="w-4 h-4 text-[#aa3bff]" />
+                  Análisis de Decisión
+                </div>
+
+                {/* 1. ACCESSIBILITY CARD */}
+                <div className="border border-gray-100 rounded-2xl overflow-hidden bg-white shadow-2xs transition-all">
+                  <button
+                    onClick={() =>
+                      setOpenSection((prev) => (prev === 'accessibility' ? null : 'accessibility'))
+                    }
+                    className="w-full p-3.5 bg-gray-50/70 hover:bg-gray-50 flex items-center justify-between cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 border border-blue-100">
+                        <Car className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-bold text-xs text-gray-900">Accesibilidad</h4>
+                        <span className="text-[10px] text-gray-500 font-medium">Distancia y tiempo de viaje</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {accessibilityData?.accessibility_level && (
+                        <span
+                          className={cn(
+                            'px-2 py-0.5 text-[10px] font-bold rounded-md border',
+                            accessibilityData.accessibility_level === 'Excelente' &&
+                              'bg-green-50 text-green-700 border-green-200',
+                            accessibilityData.accessibility_level === 'Bueno' &&
+                              'bg-emerald-50 text-emerald-700 border-emerald-200',
+                            accessibilityData.accessibility_level === 'Regular' &&
+                              'bg-amber-50 text-amber-700 border-amber-200',
+                            accessibilityData.accessibility_level === 'Pobre' &&
+                              'bg-orange-50 text-orange-700 border-orange-200',
+                            accessibilityData.accessibility_level === 'Muy Pobre' &&
+                              'bg-red-50 text-red-700 border-red-200',
+                          )}
+                        >
+                          {accessibilityData.accessibility_level}
+                        </span>
+                      )}
+                      {openSection === 'accessibility' ? (
+                        <ChevronUp className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
+                  </button>
+
+                  {openSection === 'accessibility' && (
+                    <div className="p-4 border-t border-gray-100 space-y-3 bg-white text-xs">
+                      {accessibilityData?.available ? (
+                        <>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 flex items-center gap-2">
+                              <Compass className="w-4 h-4 text-blue-600 shrink-0" />
+                              <div>
+                                <div className="text-[10px] text-gray-500">Distancia</div>
+                                <div className="font-bold text-gray-900">
+                                  {accessibilityData.distance_km} km
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="bg-purple-50/50 p-2.5 rounded-xl border border-purple-100 flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-[#aa3bff] shrink-0" />
+                              <div>
+                                <div className="text-[10px] text-gray-500">Tiempo Est.</div>
+                                <div className="font-bold text-gray-900">
+                                  {accessibilityData.estimated_time_minutes} min
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded-xl">
+                            <span className="text-gray-500 text-[11px]">Puntaje Accesibilidad</span>
+                            <span className="font-bold text-blue-700">
+                              {accessibilityData.accessibility_score} / 100
+                            </span>
+                          </div>
+
+                          <span className="text-[9px] text-gray-400 block text-right">
+                            Proveedor: {accessibilityData.provider || 'OpenRouteService'}
+                          </span>
+                        </>
+                      ) : (
+                        <div className="bg-amber-50/60 border border-amber-200 text-amber-900 p-3 rounded-xl text-center space-y-1">
+                          <p className="font-semibold text-xs">Configure su Perfil de Decisión</p>
+                          <p className="text-[11px] text-amber-700">
+                            Guarde su ubicación de origen en el panel flotante para calcular distancias y tiempos de viaje.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. CLIMATE CARD */}
+                <div className="border border-gray-100 rounded-2xl overflow-hidden bg-white shadow-2xs transition-all">
+                  <button
+                    onClick={() => setOpenSection((prev) => (prev === 'climate' ? null : 'climate'))}
+                    className="w-full p-3.5 bg-gray-50/70 hover:bg-gray-50 flex items-center justify-between cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-amber-50 text-amber-600 border border-amber-100">
+                        <CloudSun className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-bold text-xs text-gray-900">Clima</h4>
+                        <span className="text-[10px] text-gray-500 font-medium">Temperatura y heladas</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {climateData?.climate_type && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200 truncate max-w-[110px]">
+                          {climateData.climate_type}
+                        </span>
+                      )}
+                      {openSection === 'climate' ? (
+                        <ChevronUp className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
+                  </button>
+
+                  {openSection === 'climate' && (
+                    <div className="p-4 border-t border-gray-100 space-y-3 bg-white text-xs">
+                      {climateData?.available ? (
+                        <>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-amber-50/50 p-2.5 rounded-xl border border-amber-100 flex items-center gap-2">
+                              <Thermometer className="w-4 h-4 text-amber-600 shrink-0" />
+                              <div>
+                                <div className="text-[10px] text-gray-500">Temp. Promedio</div>
+                                <div className="font-bold text-gray-900">
+                                  {climateData.average_temperature}°C
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="bg-sky-50/50 p-2.5 rounded-xl border border-sky-100 flex items-center gap-2">
+                              <Thermometer className="w-4 h-4 text-sky-600 shrink-0" />
+                              <div>
+                                <div className="text-[10px] text-gray-500">Rango (Min/Max)</div>
+                                <div className="font-bold text-gray-900">
+                                  {climateData.minimum_temperature}° ~ {climateData.maximum_temperature}°C
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-y-2 bg-gray-50 p-2.5 rounded-xl text-[11px]">
+                            <span className="text-gray-500">Precipitaciones:</span>
+                            <span className="font-semibold text-right text-gray-900">
+                              {climateData.rainfall_level}
+                            </span>
+                            <span className="text-gray-500">Probabilidad de Heladas:</span>
+                            <span className="font-semibold text-right text-gray-900">
+                              {climateData.frost_probability}
+                            </span>
+                          </div>
+
+                          {climateData.badges?.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {climateData.badges.map((badge, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200"
+                                >
+                                  {badge}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          <span className="text-[9px] text-gray-400 block text-right">
+                            Fuente: {climateData.provider || 'SENAMHI'}
+                          </span>
+                        </>
+                      ) : (
+                        <p className="text-xs text-gray-500 italic text-center p-2">
+                          Información climática no disponible.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. CONNECTIVITY CARD */}
+                <div className="border border-gray-100 rounded-2xl overflow-hidden bg-white shadow-2xs transition-all">
+                  <button
+                    onClick={() =>
+                      setOpenSection((prev) => (prev === 'connectivity' ? null : 'connectivity'))
+                    }
+                    className="w-full p-3.5 bg-gray-50/70 hover:bg-gray-50 flex items-center justify-between cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-teal-50 text-teal-600 border border-teal-100">
+                        <Wifi className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-bold text-xs text-gray-900">Conectividad</h4>
+                        <span className="text-[10px] text-gray-500 font-medium">Cobertura móvil e Internet</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {connectivityData?.internet_quality_score && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-teal-50 text-teal-800 border border-teal-200">
+                          {connectivityData.internet_quality_score} / 100 pts
+                        </span>
+                      )}
+                      {openSection === 'connectivity' ? (
+                        <ChevronUp className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
+                  </button>
+
+                  {openSection === 'connectivity' && (
+                    <div className="p-4 border-t border-gray-100 space-y-3 bg-white text-xs">
+                      {connectivityData?.available ? (
+                        <>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              { operator: 'Claro', coverage: connectivityData.claro_coverage, color: 'text-red-600' },
+                              { operator: 'Movistar', coverage: connectivityData.movistar_coverage, color: 'text-blue-600' },
+                              { operator: 'Entel', coverage: connectivityData.entel_coverage, color: 'text-amber-600' },
+                              { operator: 'Bitel', coverage: connectivityData.bitel_coverage, color: 'text-yellow-600' },
+                            ].map((op) => (
+                              <div key={op.operator} className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex flex-col justify-between">
+                                <span className={cn("font-bold text-xs", op.color)}>{op.operator}</span>
+                                <div className="flex items-center justify-between mt-1 text-[11px]">
+                                  <span className="text-gray-500">{op.coverage}</span>
+                                  <span className="text-amber-500 font-bold text-[10px]">
+                                    {op.coverage === 'Excelente' ? '★★★★★' : op.coverage === 'Bueno' ? '★★★★☆' : op.coverage === 'Regular' ? '★★★☆☆' : '★★☆☆☆'}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="flex justify-between items-center bg-teal-50/50 border border-teal-100 p-2.5 rounded-xl">
+                            <span className="text-gray-600 text-[11px] font-medium">Calidad de Internet Global</span>
+                            <span className="font-black text-teal-700 text-sm">
+                              {connectivityData.internet_quality_score} / 100
+                            </span>
+                          </div>
+
+                          <span className="text-[9px] text-gray-400 block text-right">
+                            Fuente: {connectivityData.provider || 'OSIPTEL'}
+                          </span>
+                        </>
+                      ) : (
+                        <p className="text-xs text-gray-500 italic text-center p-2">
+                          Información de conectividad no disponible.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
 
               {/* Professions / Plazas list */}
               <div className="space-y-3">
@@ -479,8 +940,9 @@ export function PlazaInfoPanel() {
 
                 <div className="space-y-3">
                   <div className="text-gray-900 font-bold text-sm border-b border-gray-100 pb-2">
-                    Indicadores de Competitividad
+                    Indicadores de Adjudicación Histórica
                   </div>
+
                   {isHistLoading ? (
                     <div className="h-8 bg-gray-105 animate-pulse rounded-lg w-full"></div>
                   ) : historicalData ? (

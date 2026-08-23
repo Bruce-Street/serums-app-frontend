@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { FavoriteItem, Filters, PlazaMapItem } from '@/types';
 import { getFavoritePlazas } from '@/utils/favoritePlazas.ts';
+import { DecisionProfileStorage } from '@/utils/DecisionProfileStorage.ts';
 
 interface AppState {
   isFiltersOpen: boolean;
@@ -33,8 +34,16 @@ interface AppState {
   toggleFavorites: (open?: boolean) => void;
 }
 
+const getInitialFilters = () => {
+  const initialProfession = DecisionProfileStorage.getProfile()?.profession;
+
+  return {
+    ...(initialProfession && { profesion: initialProfession }),
+  };
+};
+
 export const useAppStore = create<AppState>((set) => ({
-  filters: {},
+  filters: getInitialFilters(),
   selectedEstablishment: undefined,
   isFiltersOpen: true,
   flyToLocation: undefined,

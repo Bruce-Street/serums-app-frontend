@@ -35,6 +35,7 @@ export interface GlobalSearchResult {
 export interface Plaza {
   id: string;
   nombre: string;
+  nombre_establecimiento?: string;
   categoria_establecimiento: string;
   codigo_renipress: string;
   departamento: string;
@@ -125,3 +126,81 @@ export interface FavoriteItem {
   procesoAno: string;
   procesoPeriodo: string;
 }
+
+export interface AccessibilityResponse {
+  available: boolean;
+  message?: string;
+  distance_km: number | null;
+  estimated_time_minutes: number | null;
+  travel_mode: string;
+  accessibility_score: number | null;
+  accessibility_level: string;
+  provider?: string;
+}
+
+export interface ClimateResponse {
+  available: boolean;
+  average_temperature: number;
+  minimum_temperature: number;
+  maximum_temperature: number;
+  rainfall_level: string;
+  frost_probability: string;
+  climate_type: string;
+  badges: string[];
+  provider?: string;
+}
+
+export interface ConnectivityResponse {
+  available: boolean;
+  claro_coverage: string;
+  movistar_coverage: string;
+  entel_coverage: string;
+  bitel_coverage: string;
+  internet_quality_score: number;
+  provider?: string;
+}
+
+export interface UserOpportunityDetail {
+  score: number;
+  level: 'very_low' | 'low' | 'moderate' | 'good' | 'very_good' | string;
+  level_display: string;
+  source: 'historical' | 'difficulty_fallback' | 'historical_no_user_score' | string;
+  user_score: number | null;
+  profession: string | null;
+  historical_sample_size: number;
+  historical_period_count: number;
+  historical_year_count: number;
+  available_historical_periods: string[];
+  historical_min: number | null;
+  historical_max: number | null;
+  historical_average: number | null;
+  historical_median: number | null;
+  historical_std_deviation: number | null;
+  historical_coverage: {
+    available_from: string | null;
+    available_to: string | null;
+    periods_with_data: number;
+    years_with_data: number;
+  };
+  first_observed_period: string | null;
+  last_observed_period: string | null;
+  confidence: 'none' | 'very_low' | 'low' | 'moderate' | 'high' | string;
+  confidence_display: string;
+  explanation: string;
+}
+
+export interface RecommendationResponse {
+  recommendation_score: number;
+  recommendation_level: string;
+  badge: string;
+  weights_used: Record<string, number>;
+  breakdown: {
+    user_opportunity: number;
+    user_opportunity_detail?: UserOpportunityDetail;
+    accessibility: number | null;
+    climate: number;
+    connectivity: number;
+  };
+}
+
+

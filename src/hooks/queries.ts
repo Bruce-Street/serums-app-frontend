@@ -5,7 +5,13 @@ import {
   getPlazasMap,
   searchGlobal,
   getPlazaHistorical,
+  getAccessibility,
+  getClimate,
+  getConnectivity,
+  getRecommendation,
+  getUserOpportunity,
 } from '../api/serums';
+
 import type { Filters } from '@/types';
 
 export const usePlazasMap = (filters?: Partial<Filters>) => {
@@ -49,3 +55,45 @@ export const usePlazaHistorical = (id?: string) => {
     enabled: !!id,
   });
 };
+
+export const useAccessibility = (id?: string, params?: Record<string, string>) => {
+  return useQuery({
+    queryKey: ['accessibility', id, params],
+    queryFn: ({ signal }) => getAccessibility(id!, params, signal),
+    enabled: !!id,
+  });
+};
+
+export const useClimate = (id?: string) => {
+  return useQuery({
+    queryKey: ['climate', id],
+    queryFn: ({ signal }) => getClimate(id!, signal),
+    enabled: !!id,
+  });
+};
+
+export const useConnectivity = (id?: string) => {
+  return useQuery({
+    queryKey: ['connectivity', id],
+    queryFn: ({ signal }) => getConnectivity(id!, signal),
+    enabled: !!id,
+  });
+};
+
+export const useRecommendation = (id?: string, params?: Record<string, string>) => {
+  return useQuery({
+    queryKey: ['recommendation', id, params],
+    queryFn: ({ signal }) => getRecommendation(id!, params, signal),
+    enabled: !!id,
+  });
+};
+
+export const useUserOpportunity = (id?: string, params?: Record<string, string>) => {
+  return useQuery({
+    queryKey: ['userOpportunity', id, params],
+    queryFn: ({ signal }) => getUserOpportunity(id!, params, signal),
+    enabled: !!id,
+  });
+};
+
+

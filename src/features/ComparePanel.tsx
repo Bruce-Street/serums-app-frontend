@@ -1,11 +1,62 @@
-import { X, GitCompare, Trash2, ShieldAlert, Building2, Award, TrendingUp } from 'lucide-react';
+import {
+  X,
+  GitCompare,
+  Trash2,
+  ShieldAlert,
+  Building2,
+  Award,
+  TrendingUp,
+  Car,
+  CloudSun,
+  Wifi,
+  Sparkles,
+} from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
-import { usePlaza, usePlazaHistorical } from '../hooks/queries';
+import {
+  usePlaza,
+  usePlazaHistorical,
+  useAccessibility,
+  useClimate,
+  useConnectivity,
+  useRecommendation,
+} from '../hooks/queries';
+import { useDecisionProfile } from '../hooks/useDecisionProfile';
 import { cn } from '../utils/cn';
+import { useMemo } from 'react';
 
 function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: () => void }) {
   const { data: plaza, isLoading: isPlazaLoading, isError: isPlazaError } = usePlaza(plazaId);
   const { data: historical, isLoading: isHistLoading } = usePlazaHistorical(plazaId);
+
+  const { profile, isConfigured } = useDecisionProfile();
+
+  const decisionParams = useMemo(() => {
+    if (!profile) return undefined;
+    const params: Record<string, string> = {};
+    if (profile.profession) params.user_profession = profile.profession;
+    if (profile.finalScore !== null && profile.finalScore !== undefined)
+      params.user_score = String(profile.finalScore);
+    if (profile.origin) {
+      if (
+        profile.origin.type === 'coordinates' &&
+        profile.origin.latitude &&
+        profile.origin.longitude
+      ) {
+        params.origin_lat = String(profile.origin.latitude);
+        params.origin_lon = String(profile.origin.longitude);
+      } else if (profile.origin.type === 'manual') {
+        if (profile.origin.district) params.origin_district = profile.origin.district;
+        if (profile.origin.province) params.origin_province = profile.origin.province;
+        if (profile.origin.department) params.origin_department = profile.origin.department;
+      }
+    }
+    return params;
+  }, [profile]);
+
+  const { data: recommendation } = useRecommendation(plazaId, decisionParams);
+  const { data: accessibility } = useAccessibility(plazaId, decisionParams);
+  const { data: climate } = useClimate(plazaId);
+  const { data: connectivity } = useConnectivity(plazaId);
 
   if (isPlazaLoading) {
     return (
@@ -32,7 +83,7 @@ function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: ()
   }
 
   return (
-    <div className="flex-1 min-w-[280px] max-w-[340px] bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden">
+    <div className="flex-1 min-w-[290px] max-w-[340px] bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden">
       {/* Card Header */}
       <div className="p-5 bg-gradient-to-br from-purple-50/50 via-white to-gray-50/50 border-b border-gray-100 relative">
         <button
@@ -60,7 +111,7 @@ function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: ()
         </div>
 
         <h3 className="text-base font-bold text-gray-900 leading-tight line-clamp-2 pr-6">
-          {plaza.nombre || plaza.codigo_renipress}
+          {plaza.nombre_establecimiento || plaza.codigo_renipress}
         </h3>
 
         <p className="text-xs font-bold text-[#aa3bff] mt-1 uppercase">{plaza.profesion}</p>
@@ -68,6 +119,114 @@ function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: ()
 
       {/* Card Content - Sections */}
       <div className="p-5 flex-1 space-y-6 overflow-y-auto custom-scrollbar text-xs">
+        {/* Global Recommendation & Scores Summary */}
+        <div className="space-y-3">
+          {/* Global Score Banner */}
+          <div className="bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-950 p-3.5 rounded-xl text-white shadow-sm space-y-1.5 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-purple-200">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Puntaje Global</span>
+              </div>
+              {recommendation?.badge && (
+                <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full bg-amber-400 text-purple-950">
+                  {recommendation.badge}
+                </span>
+              )}
+            </div>
+
+            {recommendation ? (
+              <div className="flex items-baseline justify-between">
+                <div className="text-2xl font-black text-white flex items-baseline gap-1">
+                  {recommendation.recommendation_score}
+                  <span className="text-[10px] text-purple-300 font-normal">/ 100</span>
+                </div>
+                <span className="text-[11px] font-semibold text-purple-200 truncate max-w-[140px]">
+                  {recommendation.recommendation_level}
+                </span>
+              </div>
+            ) : (
+              <div className="text-[10px] text-purple-300 italic">Calculando recomendación...</div>
+            )}
+          </div>
+
+          {/* Decision Scores Grid (4 categories) */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {/* 1. Tu Oportunidad */}
+            <div className="p-2.5 bg-purple-50/70 rounded-xl border border-purple-100 flex flex-col justify-between">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-purple-900 mb-1">
+                <TrendingUp className="w-3 h-3 text-[#aa3bff]" />
+                <span className="truncate">Oportunidad</span>
+              </div>
+              <div>
+                <div className="font-black text-sm text-purple-950">
+                  {recommendation?.breakdown?.user_opportunity ?? '-'}
+                  <span className="text-[10px] text-purple-700 font-normal">/100</span>
+                </div>
+                <span className="text-[9px] text-purple-700 font-medium block truncate">
+                  {recommendation?.breakdown?.user_opportunity_detail?.level_display ??
+                    (isConfigured ? 'Calculado' : 'Sin perfil')}
+                </span>
+              </div>
+            </div>
+
+            {/* 2. Accesibilidad */}
+            <div className="p-2.5 bg-blue-50/70 rounded-xl border border-blue-100 flex flex-col justify-between">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-blue-900 mb-1">
+                <Car className="w-3 h-3 text-blue-600" />
+                <span className="truncate">Accesibilidad</span>
+              </div>
+              <div>
+                <div className="font-black text-sm text-blue-950">
+                  {accessibility?.accessibility_score ?? '-'}
+                  <span className="text-[10px] text-blue-700 font-normal">/100</span>
+                </div>
+                <span className="text-[9px] text-blue-700 font-medium block truncate">
+                  {accessibility?.distance_km
+                    ? `${accessibility.distance_km} km (${accessibility.estimated_time_minutes} min)`
+                    : 'Sin origen'}
+                </span>
+              </div>
+            </div>
+
+            {/* 3. Clima */}
+            <div className="p-2.5 bg-amber-50/70 rounded-xl border border-amber-100 flex flex-col justify-between">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-amber-900 mb-1">
+                <CloudSun className="w-3 h-3 text-amber-600" />
+                <span className="truncate">Clima</span>
+              </div>
+              <div>
+                <div className="font-black text-sm text-amber-950">
+                  {recommendation?.breakdown?.climate ?? '-'}
+                  <span className="text-[10px] text-amber-700 font-normal">/100</span>
+                </div>
+                <span className="text-[9px] text-amber-700 font-medium block truncate">
+                  {climate?.average_temperature
+                    ? `${climate.average_temperature}°C (${climate.climate_type})`
+                    : '-'}
+                </span>
+              </div>
+            </div>
+
+            {/* 4. Conectividad */}
+            <div className="p-2.5 bg-teal-50/70 rounded-xl border border-teal-100 flex flex-col justify-between">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-teal-900 mb-1">
+                <Wifi className="w-3 h-3 text-teal-600" />
+                <span className="truncate">Conectividad</span>
+              </div>
+              <div>
+                <div className="font-black text-sm text-teal-950">
+                  {connectivity?.internet_quality_score ?? '-'}
+                  <span className="text-[10px] text-teal-700 font-normal">/100</span>
+                </div>
+                <span className="text-[9px] text-teal-700 font-medium block truncate">
+                  {connectivity?.claro_coverage ? `Claro: ${connectivity.claro_coverage}` : '-'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Basic Info */}
         <div className="space-y-2.5">
           <div className="font-bold text-gray-900 flex items-center gap-1.5 border-b border-gray-100 pb-1.5">
@@ -126,11 +285,11 @@ function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: ()
           </div>
         </div>
 
-        {/* Competitiveness Indicators */}
+        {/* Historical Indicators */}
         <div className="space-y-2.5">
           <div className="font-bold text-gray-900 flex items-center gap-1.5 border-b border-gray-100 pb-1.5">
             <TrendingUp className="w-3.5 h-3.5 text-[#aa3bff]" />
-            Indicadores de Competitividad
+            Indicadores de Adjudicación Histórica
           </div>
           {isHistLoading ? (
             <div className="h-6 bg-gray-100 animate-pulse rounded" />

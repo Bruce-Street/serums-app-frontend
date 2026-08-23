@@ -224,7 +224,9 @@ export function FiltersPanel() {
 
           {/* Conditions */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Condiciones</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+              Condiciones
+            </h3>
             <div className="space-y-2.5">
               <Select
                 value={filters.grado_dificultad || 'all'}
