@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   UserCheck,
   Edit3,
@@ -13,11 +13,14 @@ import {
 } from 'lucide-react';
 import { useDecisionProfile } from '../hooks/useDecisionProfile';
 import { useFilters } from '../hooks/queries';
+import { useAppStore } from '../store/useAppStore';
 import { cn } from '../utils/cn';
 
 export function DecisionProfileCard() {
   const { profile, saveProfile, isConfigured } = useDecisionProfile();
   const { data: filterOptions } = useFilters();
+  const isProfileModalOpen = useAppStore((state) => state.isProfileModalOpen);
+  const toggleProfileModal = useAppStore((state) => state.toggleProfileModal);
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -63,6 +66,18 @@ export function DecisionProfileCard() {
     setIsEditing(true);
   };
 
+  useEffect(() => {
+    if (isProfileModalOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      handleOpenEdit();
+    }
+  }, [isProfileModalOpen]);
+
+  const handleClose = () => {
+    setIsEditing(false);
+    toggleProfileModal(false);
+  };
+
   const handleRequestGeolocation = () => {
     if (!navigator.geolocation) {
       setGeoError('La geolocalización no está soportada por su navegador.');
@@ -100,21 +115,24 @@ export function DecisionProfileCard() {
     setValidationError(null);
 
     if (!profession.trim()) {
-      setValidationError('Por favor seleccione su profesión.');
+      setValidationError('Por favor seleccione una profesión.');
       return;
     }
 
-    const numericScore = parseFloat(score);
-    if (isNaN(numericScore) || numericScore < 0 || numericScore > 100) {
-      setValidationError('El puntaje final debe ser un número entre 0 y 100.');
-      return;
+    let parsedScore: number | null = null;
+    if (score !== '') {
+      parsedScore = parseFloat(score);
+      if (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 100) {
+        setValidationError('El puntaje final debe ser un número entre 0 y 100.');
+        return;
+      }
     }
 
     saveProfile({
       profession: profession.trim(),
-      finalScore: numericScore,
+      finalScore: parsedScore,
       origin:
-        originType === 'coordinates' && coords.lat && coords.lon
+        originType === 'coordinates'
           ? {
               type: 'coordinates',
               latitude: coords.lat,
@@ -129,13 +147,15 @@ export function DecisionProfileCard() {
       lastUpdated: new Date().toISOString(),
     });
 
-    setIsEditing(false);
+    handleClose();
   };
+
+  const isModalVisible = isEditing || isProfileModalOpen;
 
   return (
     <>
-      {/* Floating Card Desktop (top-right) & Mobile Bar */}
-      <div className="fixed top-20 right-4 z-40 max-w-sm w-full md:w-80 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-100 shadow-xl p-4 transition-all">
+      {/* Floating Card Desktop (top-right) - Hidden on Mobile */}
+      <div className="hidden md:block fixed top-20 right-4 z-30 w-80 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-100 shadow-xl p-4 transition-all">
         <div className="flex items-center justify-between pb-3 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-[#aa3bff]/10 text-[#aa3bff]">
@@ -208,23 +228,25 @@ export function DecisionProfileCard() {
         </div>
       </div>
 
-      {/* Modal / Form Drawer */}
-      {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+      {/* Modal / Form Drawer (Responsive: Drawer on mobile, Modal on desktop) */}
+      {isModalVisible && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 animate-in fade-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50/50">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50/50 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-[#aa3bff] text-white">
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-gray-900">Editar Perfil de Decisión</h3>
-                  <p className="text-xs text-gray-500">Se guarda localmente en tu navegador</p>
+                  <h3 className="font-bold text-base text-gray-900">Perfil de Decisión</h3>
+                  <p className="text-xs text-gray-500">
+                    Configura tus datos para personalizar las recomendaciones
+                  </p>
                 </div>
               </div>
               <button
-                onClick={() => setIsEditing(false)}
+                onClick={handleClose}
                 className="p-2 hover:bg-gray-200/60 rounded-full transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5 text-gray-500" />

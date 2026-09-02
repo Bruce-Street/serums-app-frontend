@@ -16,6 +16,11 @@ interface AppState {
   // Favorites Panel
   isFavoritesOpen: boolean;
 
+  // Decision Profile Modal
+  isProfileModalOpen: boolean;
+  toggleProfileModal: (open?: boolean) => void;
+
+
   toggleFilters: () => void;
   updateFilter: (key: keyof Filters, value: string) => void;
   setSelectedEstablishment: (establishment: PlazaMapItem | undefined) => void;
@@ -33,6 +38,7 @@ interface AppState {
   removeFavoritePlaza: (id: string) => void;
   toggleFavorites: (open?: boolean) => void;
 }
+
 
 const getInitialFilters = () => {
   const initialProfession = DecisionProfileStorage.getProfile()?.profession;
@@ -56,7 +62,15 @@ export const useAppStore = create<AppState>((set) => ({
   favoritePlazas: getFavoritePlazas() || [],
   isFavoritesOpen: false,
 
+  // Initial Profile Modal State
+  isProfileModalOpen: false,
+  toggleProfileModal: (open) =>
+    set((state) => ({
+      isProfileModalOpen: open !== undefined ? open : !state.isProfileModalOpen,
+    })),
+
   updateFilter: (key, value) =>
+
     set((state) => ({
       filters: { ...state.filters, [key]: value },
     })),

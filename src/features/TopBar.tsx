@@ -1,9 +1,10 @@
-import { MapPin, Search, Map as MapIcon, Building2, Heart, GitCompare } from 'lucide-react';
+import { MapPin, Search, Map as MapIcon, Building2, Heart, GitCompare, UserCheck } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useState, useEffect, useRef } from 'react';
 import { useGlobalSearch } from '../hooks/queries';
 import type { GlobalSearchResult, PlazaMapItem } from '../types';
 import { useFavorites } from '../hooks/useFavorites';
+import { useDecisionProfile } from '../hooks/useDecisionProfile';
 
 export function TopBar() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,8 +15,11 @@ export function TopBar() {
   const setSelectedEstablishment = useAppStore((state) => state.setSelectedEstablishment);
   const toggleFavorites = useAppStore((state) => state.toggleFavorites);
   const toggleCompareView = useAppStore((state) => state.toggleCompareView);
+  const toggleProfileModal = useAppStore((state) => state.toggleProfileModal);
   const comparedPlazaIds = useAppStore((state) => state.comparedPlazaIds);
   const { count } = useFavorites();
+  const { isConfigured, profile } = useDecisionProfile();
+
 
   // Debounced value for API
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -141,8 +145,21 @@ export function TopBar() {
         )}
       </div>
 
-      {/* Action Buttons (Favorites & Compare) */}
-      <div className="flex items-center gap-1 sm:gap-2 ml-4">
+      {/* Action Buttons (Profile, Favorites & Compare) */}
+      <div className="flex items-center gap-1.5 sm:gap-2 ml-2 sm:ml-4 shrink-0">
+        <button
+          onClick={() => toggleProfileModal(true)}
+          className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border shadow-xs bg-purple-50 hover:bg-purple-100 text-[#aa3bff] border-purple-200"
+          aria-label="Perfil de Decisión"
+          title={isConfigured && profile ? `Perfil: ${profile.profession} (${profile.finalScore} pts)` : 'Configurar Perfil de Decisión'}
+        >
+          <UserCheck className="w-4 h-4 text-[#aa3bff]" />
+          <span className="hidden sm:inline font-semibold">Perfil</span>
+          {isConfigured && (
+            <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white ml-0.5" />
+          )}
+        </button>
+
         <button
           onClick={() => toggleCompareView()}
           className="relative p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
@@ -171,6 +188,7 @@ export function TopBar() {
           )}
         </button>
       </div>
+
     </header>
   );
 }

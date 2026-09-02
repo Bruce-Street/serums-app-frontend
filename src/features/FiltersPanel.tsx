@@ -28,16 +28,17 @@ export function FiltersPanel() {
 
   return (
     <>
-      {/* Mobile toggle button */}
+      {/* Mobile toggle button - Positioned at bottom-left to avoid colliding with compare bar */}
       <button
         onClick={toggleFilters}
         className={cn(
-          'md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-6 py-3 rounded-full shadow-xl font-medium flex items-center gap-2 transition-all active:scale-95',
+          'md:hidden fixed bottom-6 left-4 z-40 bg-gray-900/95 backdrop-blur-xs text-white px-4 py-2.5 rounded-full shadow-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95 border border-white/10 cursor-pointer',
           isFiltersOpen && 'hidden',
         )}
+        aria-label="Abrir Filtros"
       >
-        <Filter className="w-4 h-4" />
-        Filters
+        <Filter className="w-3.5 h-3.5 text-[#aa3bff]" />
+        <span>Filtros</span>
       </button>
 
       {/* Desktop Toggle Button - Positioned outside the sliding container */}

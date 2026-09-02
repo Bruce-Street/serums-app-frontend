@@ -10,6 +10,8 @@ import {
   CloudSun,
   Wifi,
   Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import {
@@ -22,13 +24,57 @@ import {
 } from '../hooks/queries';
 import { useDecisionProfile } from '../hooks/useDecisionProfile';
 import { cn } from '../utils/cn';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+
+function getOpportunityLabel(score: number | null | undefined, levelDisplay?: string): string {
+  if (score === null || score === undefined) return 'Sin datos';
+  if (levelDisplay) {
+    const cleanLabel = levelDisplay.replace(/\s*Oportunidad\s*/i, '').trim();
+    return `${cleanLabel || 'Oportunidad'}: ${score}`;
+  }
+  if (score >= 81) return `Muy Buena: ${score}`;
+  if (score >= 61) return `Buena: ${score}`;
+  if (score >= 41) return `Moderada: ${score}`;
+  if (score >= 21) return `Baja: ${score}`;
+  return `Muy Baja: ${score}`;
+}
+
+function getAccessibilityLabel(score: number | null | undefined, level?: string): string {
+  if (score === null || score === undefined) return 'Sin origen';
+  if (level) return `${level}: ${score}`;
+  if (score >= 85) return `Excelente: ${score}`;
+  if (score >= 70) return `Bueno: ${score}`;
+  if (score >= 50) return `Regular: ${score}`;
+  if (score >= 30) return `Pobre: ${score}`;
+  return `Muy Pobre: ${score}`;
+}
+
+function getClimateLabel(score: number | null | undefined, climateType?: string): string {
+  if (score === null || score === undefined) return 'Sin datos';
+  if (climateType) {
+    const shortType = climateType.split('/')[0].trim();
+    return `${shortType}: ${score}`;
+  }
+  if (score >= 85) return `Excelente: ${score}`;
+  if (score >= 75) return `Bueno: ${score}`;
+  if (score >= 60) return `Moderado: ${score}`;
+  return `Extremo: ${score}`;
+}
+
+function getConnectivityLabel(score: number | null | undefined): string {
+  if (score === null || score === undefined) return 'Sin datos';
+  if (score >= 85) return `Excelente: ${score}`;
+  if (score >= 70) return `Bueno: ${score}`;
+  if (score >= 50) return `Regular: ${score}`;
+  return `Baja: ${score}`;
+}
 
 function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: () => void }) {
   const { data: plaza, isLoading: isPlazaLoading, isError: isPlazaError } = usePlaza(plazaId);
   const { data: historical, isLoading: isHistLoading } = usePlazaHistorical(plazaId);
 
-  const { profile, isConfigured } = useDecisionProfile();
+  const { profile } = useDecisionProfile();
+  const [isExpandedMobile, setIsExpandedMobile] = useState(false);
 
   const decisionParams = useMemo(() => {
     if (!profile) return undefined;
@@ -60,7 +106,7 @@ function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: ()
 
   if (isPlazaLoading) {
     return (
-      <div className="flex-1 min-w-[280px] bg-gray-50 border border-gray-200 rounded-2xl p-6 animate-pulse flex flex-col justify-center items-center h-96">
+      <div className="w-full md:w-[320px] md:min-w-[290px] md:max-w-[340px] bg-gray-50 border border-gray-200 rounded-2xl p-6 animate-pulse flex flex-col justify-center items-center h-64 md:h-96">
         <div className="w-8 h-8 rounded-full border-2 border-[#aa3bff] border-t-transparent animate-spin mb-3" />
         <span className="text-xs text-gray-500 font-medium">Cargando plaza...</span>
       </div>
@@ -69,12 +115,12 @@ function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: ()
 
   if (isPlazaError || !plaza) {
     return (
-      <div className="flex-1 min-w-[280px] bg-red-50/50 border border-red-200 rounded-2xl p-6 flex flex-col items-center text-center">
+      <div className="w-full md:w-[320px] md:min-w-[290px] md:max-w-[340px] bg-red-50/50 border border-red-200 rounded-2xl p-6 flex flex-col items-center text-center">
         <ShieldAlert className="w-8 h-8 text-red-500 mb-2" />
         <p className="text-xs font-bold text-red-800">Error al cargar la plaza</p>
         <button
           onClick={onRemove}
-          className="mt-4 px-3 py-1.5 bg-red-100 text-red-700 text-xs font-semibold rounded-lg hover:bg-red-200 transition-colors"
+          className="mt-4 px-3 py-1.5 bg-red-100 text-red-700 text-xs font-semibold rounded-lg hover:bg-red-200 transition-colors cursor-pointer"
         >
           Quitar de comparación
         </button>
@@ -82,19 +128,26 @@ function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: ()
     );
   }
 
+  const oppScore = recommendation?.breakdown?.user_opportunity;
+  const oppDetail = recommendation?.breakdown?.user_opportunity_detail;
+  const accScore = accessibility?.accessibility_score;
+  const climScore = recommendation?.breakdown?.climate;
+  const connScore = connectivity?.internet_quality_score;
+
   return (
-    <div className="flex-1 min-w-[290px] max-w-[340px] bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden">
+    <div className="w-full md:w-[320px] md:min-w-[290px] md:max-w-[340px] bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden">
       {/* Card Header */}
-      <div className="p-5 bg-gradient-to-br from-purple-50/50 via-white to-gray-50/50 border-b border-gray-100 relative">
+      <div className="p-4 sm:p-5 bg-gradient-to-br from-purple-50/50 via-white to-gray-50/50 border-b border-gray-100 relative">
         <button
           onClick={onRemove}
-          className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors cursor-pointer"
-          title="Quitar"
+          className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors cursor-pointer"
+          title="Quitar de la lista"
+          aria-label="Quitar de la lista"
         >
           <Trash2 className="w-4 h-4" />
         </button>
 
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 pr-8">
           <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-[#aa3bff]">
             {plaza.categoria_establecimiento || 'IPRESS'}
           </span>
@@ -117,113 +170,134 @@ function PlazaCompareCard({ plazaId, onRemove }: { plazaId: string; onRemove: ()
         <p className="text-xs font-bold text-[#aa3bff] mt-1 uppercase">{plaza.profesion}</p>
       </div>
 
-      {/* Card Content - Sections */}
-      <div className="p-5 flex-1 space-y-6 overflow-y-auto custom-scrollbar text-xs">
-        {/* Global Recommendation & Scores Summary */}
-        <div className="space-y-3">
-          {/* Global Score Banner */}
-          <div className="bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-950 p-3.5 rounded-xl text-white shadow-sm space-y-1.5 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-purple-200">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Puntaje Global</span>
-              </div>
-              {recommendation?.badge && (
-                <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full bg-amber-400 text-purple-950">
-                  {recommendation.badge}
-                </span>
-              )}
+      {/* High-level Summary Section (Always visible on mobile & desktop) */}
+      <div className="p-4 sm:p-5 space-y-3 bg-white">
+        {/* Global Score Banner */}
+        <div className="bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-950 p-3.5 rounded-xl text-white shadow-xs space-y-1 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-purple-200">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Puntaje Global</span>
             </div>
-
-            {recommendation ? (
-              <div className="flex items-baseline justify-between">
-                <div className="text-2xl font-black text-white flex items-baseline gap-1">
-                  {recommendation.recommendation_score}
-                  <span className="text-[10px] text-purple-300 font-normal">/ 100</span>
-                </div>
-                <span className="text-[11px] font-semibold text-purple-200 truncate max-w-[140px]">
-                  {recommendation.recommendation_level}
-                </span>
-              </div>
-            ) : (
-              <div className="text-[10px] text-purple-300 italic">Calculando recomendación...</div>
+            {recommendation?.badge && (
+              <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full bg-amber-400 text-purple-950">
+                {recommendation.badge}
+              </span>
             )}
           </div>
 
-          {/* Decision Scores Grid (4 categories) */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {/* 1. Tu Oportunidad */}
-            <div className="p-2.5 bg-purple-50/70 rounded-xl border border-purple-100 flex flex-col justify-between">
-              <div className="flex items-center gap-1 text-[10px] font-bold text-purple-900 mb-1">
-                <TrendingUp className="w-3 h-3 text-[#aa3bff]" />
-                <span className="truncate">Oportunidad</span>
+          {recommendation ? (
+            <div className="flex items-baseline justify-between">
+              <div className="text-2xl font-black text-white flex items-baseline gap-1">
+                {recommendation.recommendation_score}
+                <span className="text-[10px] text-purple-300 font-normal">/ 100</span>
               </div>
-              <div>
-                <div className="font-black text-sm text-purple-950">
-                  {recommendation?.breakdown?.user_opportunity ?? '-'}
-                  <span className="text-[10px] text-purple-700 font-normal">/100</span>
-                </div>
-                <span className="text-[9px] text-purple-700 font-medium block truncate">
-                  {recommendation?.breakdown?.user_opportunity_detail?.level_display ??
-                    (isConfigured ? 'Calculado' : 'Sin perfil')}
-                </span>
-              </div>
+              <span className="text-[11px] font-semibold text-purple-200 truncate max-w-[140px]">
+                {recommendation.recommendation_level}
+              </span>
             </div>
+          ) : (
+            <div className="text-[10px] text-purple-300 italic">Calculando recomendación...</div>
+          )}
+        </div>
 
-            {/* 2. Accesibilidad */}
-            <div className="p-2.5 bg-blue-50/70 rounded-xl border border-blue-100 flex flex-col justify-between">
-              <div className="flex items-center gap-1 text-[10px] font-bold text-blue-900 mb-1">
-                <Car className="w-3 h-3 text-blue-600" />
-                <span className="truncate">Accesibilidad</span>
-              </div>
-              <div>
-                <div className="font-black text-sm text-blue-950">
-                  {accessibility?.accessibility_score ?? '-'}
-                  <span className="text-[10px] text-blue-700 font-normal">/100</span>
-                </div>
-                <span className="text-[9px] text-blue-700 font-medium block truncate">
-                  {accessibility?.distance_km
-                    ? `${accessibility.distance_km} km (${accessibility.estimated_time_minutes} min)`
-                    : 'Sin origen'}
-                </span>
-              </div>
-            </div>
+        {/* Formatted Category Scores List in [Label]: [Value] Format */}
+        <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100 space-y-2 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-500 font-medium flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-[#aa3bff]" />
+              Oportunidad
+            </span>
+            <span className="font-bold text-gray-900 font-mono">
+              {getOpportunityLabel(oppScore, oppDetail?.level_display)}
+            </span>
+          </div>
 
-            {/* 3. Clima */}
-            <div className="p-2.5 bg-amber-50/70 rounded-xl border border-amber-100 flex flex-col justify-between">
-              <div className="flex items-center gap-1 text-[10px] font-bold text-amber-900 mb-1">
-                <CloudSun className="w-3 h-3 text-amber-600" />
-                <span className="truncate">Clima</span>
-              </div>
-              <div>
-                <div className="font-black text-sm text-amber-950">
-                  {recommendation?.breakdown?.climate ?? '-'}
-                  <span className="text-[10px] text-amber-700 font-normal">/100</span>
-                </div>
-                <span className="text-[9px] text-amber-700 font-medium block truncate">
-                  {climate?.average_temperature
-                    ? `${climate.average_temperature}°C (${climate.climate_type})`
-                    : '-'}
-                </span>
-              </div>
-            </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-500 font-medium flex items-center gap-1.5">
+              <Car className="w-3.5 h-3.5 text-blue-600" />
+              Accesibilidad
+            </span>
+            <span className="font-bold text-gray-900 font-mono">
+              {getAccessibilityLabel(accScore, accessibility?.accessibility_level)}
+            </span>
+          </div>
 
-            {/* 4. Conectividad */}
-            <div className="p-2.5 bg-teal-50/70 rounded-xl border border-teal-100 flex flex-col justify-between">
-              <div className="flex items-center gap-1 text-[10px] font-bold text-teal-900 mb-1">
-                <Wifi className="w-3 h-3 text-teal-600" />
-                <span className="truncate">Conectividad</span>
-              </div>
-              <div>
-                <div className="font-black text-sm text-teal-950">
-                  {connectivity?.internet_quality_score ?? '-'}
-                  <span className="text-[10px] text-teal-700 font-normal">/100</span>
-                </div>
-                <span className="text-[9px] text-teal-700 font-medium block truncate">
-                  {connectivity?.claro_coverage ? `Claro: ${connectivity.claro_coverage}` : '-'}
-                </span>
-              </div>
-            </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-500 font-medium flex items-center gap-1.5">
+              <CloudSun className="w-3.5 h-3.5 text-amber-600" />
+              Clima
+            </span>
+            <span className="font-bold text-gray-900 font-mono">
+              {getClimateLabel(climScore, climate?.climate_type)}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-gray-500 font-medium flex items-center gap-1.5">
+              <Wifi className="w-3.5 h-3.5 text-teal-600" />
+              Conectividad
+            </span>
+            <span className="font-bold text-gray-900 font-mono">
+              {getConnectivityLabel(connScore)}
+            </span>
+          </div>
+        </div>
+
+        {/* Mobile Accordion Expand / Collapse Action */}
+        <button
+          type="button"
+          onClick={() => setIsExpandedMobile((prev) => !prev)}
+          className="md:hidden w-full py-2 px-3 bg-purple-50 hover:bg-purple-100 text-[#aa3bff] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-purple-200/60 active:scale-98"
+        >
+          <span>{isExpandedMobile ? 'Contraer detalles' : 'Expandir detalles completos'}</span>
+          {isExpandedMobile ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </button>
+      </div>
+
+      {/* Detailed Content - Smoothly expandable on mobile, always visible on desktop */}
+      <div
+        className={cn(
+          'p-4 sm:p-5 pt-0 flex-1 space-y-5 overflow-y-auto custom-scrollbar text-xs border-t border-gray-100 md:border-t-0',
+          isExpandedMobile ? 'block animate-in fade-in duration-200' : 'hidden md:block',
+        )}
+      >
+        {/* Decision Breakdown Badges Details */}
+        <div className="grid grid-cols-2 gap-2 text-xs pt-3 md:pt-0">
+          <div className="p-2.5 bg-purple-50/50 rounded-xl border border-purple-100 flex flex-col justify-between">
+            <span className="text-[10px] text-gray-500">Detalle Oportunidad</span>
+            <span className="text-[10px] font-semibold text-purple-900 truncate mt-0.5">
+              {oppDetail?.historical_sample_size
+                ? `${oppDetail.historical_sample_size} adj. (${oppDetail.confidence_display})`
+                : 'Fallback GD'}
+            </span>
+          </div>
+
+          <div className="p-2.5 bg-blue-50/50 rounded-xl border border-blue-100 flex flex-col justify-between">
+            <span className="text-[10px] text-gray-500">Distancia y Tiempo</span>
+            <span className="text-[10px] font-semibold text-blue-900 truncate mt-0.5">
+              {accessibility?.distance_km
+                ? `${accessibility.distance_km}km · ${accessibility.estimated_time_minutes}min`
+                : 'Sin origen'}
+            </span>
+          </div>
+
+          <div className="p-2.5 bg-amber-50/50 rounded-xl border border-amber-100 flex flex-col justify-between">
+            <span className="text-[10px] text-gray-500">Temperatura Prom.</span>
+            <span className="text-[10px] font-semibold text-amber-900 truncate mt-0.5">
+              {climate?.average_temperature ? `${climate.average_temperature}°C` : '-'}
+            </span>
+          </div>
+
+          <div className="p-2.5 bg-teal-50/50 rounded-xl border border-teal-100 flex flex-col justify-between">
+            <span className="text-[10px] text-gray-500">Cobertura Claro</span>
+            <span className="text-[10px] font-semibold text-teal-900 truncate mt-0.5">
+              {connectivity?.claro_coverage || '-'}
+            </span>
           </div>
         </div>
 
@@ -398,50 +472,51 @@ export function ComparePanel() {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
       onClick={() => toggleCompareView(false)}
     >
       <div
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="p-5 sm:p-6 border-b border-gray-100 flex items-center justify-between bg-white z-10">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-purple-50 text-[#aa3bff] rounded-xl border border-purple-100">
-              <GitCompare className="w-6 h-6" />
+        <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between bg-white z-10 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-purple-50 text-[#aa3bff] rounded-xl border border-purple-100">
+              <GitCompare className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
+              <h2 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">
                 Comparativa de Plazas SERUMS
               </h2>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Comparación lado a lado de características, condiciones e indicadores históricos (
+              <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
+                Comparación lado a lado de características, condiciones e indicadores (
                 {comparedPlazaIds.length}/3 plazas)
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {comparedPlazaIds.length > 0 && (
               <button
                 onClick={clearCompare}
-                className="px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                className="px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
               >
                 Limpiar todo
               </button>
             )}
             <button
               onClick={() => toggleCompareView(false)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer text-gray-500"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer text-gray-500"
+              aria-label="Cerrar modal de comparación"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Modal Body */}
-        <div className="flex-1 p-6 overflow-x-auto overflow-y-auto bg-gray-50/50 custom-scrollbar">
+        {/* Modal Body: Stacked on mobile, side-by-side multi-column on desktop */}
+        <div className="flex-1 p-4 sm:p-6 overflow-x-hidden md:overflow-x-auto overflow-y-auto bg-gray-50/50 custom-scrollbar">
           {comparedPlazaIds.length === 0 ? (
             <div className="py-16 text-center flex flex-col items-center justify-center">
               <div className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center text-[#aa3bff] mb-4">
@@ -454,7 +529,7 @@ export function ComparePanel() {
               </p>
             </div>
           ) : (
-            <div className="flex gap-6 justify-center min-w-max pb-2">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6 justify-start md:justify-center w-full min-w-0 md:min-w-max pb-4">
               {comparedPlazaIds.map((id) => (
                 <PlazaCompareCard
                   key={id}
